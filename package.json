@@ -1,0 +1,27 @@
+{
+  "name": "oba",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@google-cloud/local-auth": "^2.1.0",
+    "axios": "^0.27.2",
+    "dotenv": "^16.0.1",
+    "express": "^4.18.1",
+    "fs-extra": "^10.1.0",
+    "google-spreadsheet": "^3.3.0",
+    "googleapis": "^105.0.0",
+    "redis": "^4.3.0"
+  },
+  "type": "module",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "nodemon index.js"
+  },
+  "devDependencies": {
+    "nodemon": "^2.0.19"
+  }
+}
