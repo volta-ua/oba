@@ -1,8 +1,6 @@
 import axios from 'axios'
-import {config} from 'dotenv'
 import express from 'express'
 import {GoogleSpreadsheet} from 'google-spreadsheet'
-
 import {
     isValidPhonePartner, isClientNameValid, isValidNPmethod, isClientPhoneValid,
     isNpWhValid, isUpIndexValid, isItemValid, isSizeValid, isQtyValid, isValidPhotoPaym
@@ -13,10 +11,11 @@ import {
 } from './compositor.js'
 import {placeOrder} from './placeOrder.js'
 import {convert2DimArrayInto1Dim, filterArray, includesIgnoringCase, makeFirstLetterCapital, slice2d} from './service.js'
-import {generateOrderId} from "./util.js";
+import {generateOrderId} from "./util.js"
+import configMode from "./config.js"
 
 
-config()
+console.log(JSON.stringify(configMode))
 
 export const CONF = {skip_validation: true}
 export const MSG_NEW_ORDER = 'СОЗДАТЬ ЗАКАЗ'
@@ -33,9 +32,9 @@ export const NP_METHOD_WH = 'ОТДЕЛЕНИЕ'
 export const NP_METHOD_POST = 'ПОЧТОМАТ'
 export const NP_METHOD_DOOR = 'ДВЕРИ'
 
-const TELEGRAM_URI = `https://api.telegram.org/bot${process.env.TELEGRAM_API_TOKEN}`
+const TELEGRAM_URI = `https://api.telegram.org/bot${configMode.bot.TELEGRAM_API_TOKEN}`
 const TELEGRAM_URI_SEND_MESSAGE = `${TELEGRAM_URI}/sendMessage`
-export const TELEGRAM_URI_FILE = `https://api.telegram.org/file/bot${process.env.TELEGRAM_API_TOKEN}`
+export const TELEGRAM_URI_FILE = `https://api.telegram.org/file/bot${configMode.bot.TELEGRAM_API_TOKEN}`
 export const TELEGRAM_URI_FILE_ID = `${TELEGRAM_URI}/getFile?file_id=`
 const TELEGRAM_SUPPORT = process.env.TELEGRAM_SUPPORT
 const CODE_UA = '38'
@@ -47,13 +46,10 @@ const COL_STK_ARTICUL = 2
 const COL_STK_MODEL = 5
 const COL_STK_COLOUR = 6
 const COL_STK_SISE_L = 7
-//const ADDR_STK_ARTICLES = 'B4:B'
 const ADDR_STK_DATA = 'A4:S'
 const MAX_POSITION_IN_ORDER = 5
 const MAX_QTY_IN_POSITION = 10
 const SIZES = [35, 36, 37, 38, 39, 40, 41]
-
-console.log(TELEGRAM_URI_SEND_MESSAGE)
 
 const app = express()
 
@@ -582,17 +578,7 @@ export const dictArticuls = await async function () {
     return articuls
 }()
 
-
-/*
-export const dictArticles = await async function () {
-    //await doc.loadInfo()
-    const sheet = doc.sheetsByTitle[SH_STK]
-    let articles = await sheet.getCellsInRange(ADDR_STK_ARTICLES)
-    articles = convert2DimArrayInto1Dim(articles)
-    return articles
-}()
-*/
-const PORT = process.env.PORT || 5000//3000//8443//3000
+const PORT = configMode.app.port
 app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`)
 })
