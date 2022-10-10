@@ -197,18 +197,25 @@ app.post('/new-message', async (req, res) => {
                 await sendMessage(chatId, 'Введите артикул (5 цифр) или название товара (модель-цвет: достаточно несколько символов, в том числе не подряд).' + msgGoToHome())
             } else {
                 const MAX_ITEMS_LISTED = 50
-                let dictItems = messageText.match('^[0-9]{5}$')
-                    ? dictArticuls
-                    : dictModelAndColour
+                let dictItems = null
+                let isArticul = null
+                if (messageText.match('^[0-9]{5}$')) {
+                    dictItems = dictArticuls
+                    isArticul = true
+                } else {
+                    dictItems = dictModelAndColour
+                    isArticul = false
+                }
                 let item = messageText.toLowerCase()
                 let actInd = includesIgnoringCase(dictItems, item)
                 if (actInd === false) {
                     let found = filterArray(dictItems, item, true)
                     let sizeFound = found?.length
                     if (!found || sizeFound === 0) {
-                        await sendMessage(chatId, 'Введеный текст \'' + item +
-                            '\' не найден в справочнике. Нужно вводить на русском языке. Повторите ввод.' +
-                            msgCancelOrder())
+                        let msgNotFound = isArticul
+                            ? 'Введеный артикул \'' + item + '\' не существует. Повторите ввод.'
+                            : 'Введеный текст \'' + item + '\' не найден в справочнике. Нужно вводить на русском языке. Повторите ввод.'
+                        await sendMessage(chatId, msgNotFound + msgCancelOrder())
                     } else if (sizeFound > MAX_ITEMS_LISTED) {
                         await sendMessage(chatId, 'Найдено слишком много вариантов. ' +
                             'Попробуйте уточнить поиск. Повторите ввод.' + msgCancelOrder())
