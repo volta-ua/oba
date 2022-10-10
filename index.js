@@ -10,10 +10,15 @@ import {
     composeQtyButtons, composeSizeButtons, composeTypeButtons, composOrderConfirmButtons
 } from './compositor.js'
 import {placeOrder} from './placeOrder.js'
-import {convert2DimArrayInto1Dim, filterArray, includesIgnoringCase, makeFirstLetterCapital, slice2d} from './service.js'
+import {
+    convert2DimArrayInto1Dim,
+    filterArray,
+    includesIgnoringCase,
+    makeFirstLetterCapital,
+    slice2d
+} from './service.js'
 import {generateOrderId} from "./util.js"
 import configMode from "./config.js"
-
 
 console.log(JSON.stringify(configMode))
 
