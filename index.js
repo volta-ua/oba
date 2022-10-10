@@ -55,6 +55,7 @@ const ADDR_STK_DATA = 'A4:S'
 const MAX_POSITION_IN_ORDER = 5
 const MAX_QTY_IN_POSITION = 10
 const SIZES = [35, 36, 37, 38, 39, 40, 41]
+const RELOAD_STK_MS = 5 * 60 * 1000
 
 const app = express()
 
@@ -71,6 +72,9 @@ await doc.useServiceAccountAuth({
 await doc.loadInfo()
 
 const users = {}
+const ctx = {
+    'reload_stk_last_date': new Date()
+}
 const states = {
     HOME: '/home',
     HELP: '/help',
@@ -184,9 +188,13 @@ app.post('/new-message', async (req, res) => {
 
         case states.AVAIL:
             users[chatId] = {state: states.AVAIL}
+            let dtNow = new Date()
+            if (dtNow.getTime() - ctx.reload_stk_last_date.getTime() > RELOAD_STK_MS) {
+                await reloadStk()
+                ctx.reload_stk_last_date = dtNow
+            }
             if (messageText === MSG_AVAIL) {
                 await sendMessage(chatId, 'Введите артикул (5 цифр) или название товара (модель-цвет: достаточно несколько символов, в том числе не подряд).' + msgGoToHome())
-                await reloadStk()
             } else {
                 const MAX_ITEMS_LISTED = 50
                 let dictItems = messageText.match('^[0-9]{5}$')
