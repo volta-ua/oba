@@ -202,7 +202,7 @@ app.post('/new-message', async (req, res) => {
                     : dictModelAndColour
                 let item = messageText.toLowerCase()
                 let actInd = includesIgnoringCase(dictItems, item)
-                if (!actInd) {
+                if (actInd === false) {
                     let found = filterArray(dictItems, item, true)
                     let sizeFound = found?.length
                     if (!found || sizeFound === 0) {
