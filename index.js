@@ -69,12 +69,36 @@ await doc.useServiceAccountAuth({
     client_email: process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL,
     private_key: process.env.GOOGLE_PRIVATE_KEY.replace(/\\n/g, '\n')
 })
-await doc.loadInfo()
 
-const users = {}
+let arrStk
+
+async function reloadInfo() {
+    await doc.loadInfo()
+}
+
+async function reloadStk() {
+    arrStk = await doc.sheetsByTitle[SH_STK].getCellsInRange(ADDR_STK_DATA)
+}
+
+await reloadInfo()
+await reloadStk()
+
+async function extractDataFromTableOrCache() {
+    let dtNow = new Date()
+    if (dtNow.getTime() - ctx.reload_stk_last_date.getTime() > RELOAD_STK_MS) {
+        await reloadInfo()
+        await reloadStk()
+        ctx.reload_stk_last_date = dtNow
+    }
+}
+
+
 const ctx = {
     'reload_stk_last_date': new Date()
 }
+
+const users = {}
+
 const states = {
     HOME: '/home',
     HELP: '/help',
@@ -188,11 +212,7 @@ app.post('/new-message', async (req, res) => {
 
         case states.AVAIL:
             users[chatId] = {state: states.AVAIL}
-            let dtNow = new Date()
-            if (dtNow.getTime() - ctx.reload_stk_last_date.getTime() > RELOAD_STK_MS) {
-                await reloadStk()
-                ctx.reload_stk_last_date = dtNow
-            }
+            await extractDataFromTableOrCache()
             if (messageText === MSG_AVAIL) {
                 await sendMessage(chatId, 'Введите артикул (5 цифр) или название товара (модель-цвет: достаточно несколько символов, в том числе не подряд).' + msgGoToHome())
             } else {
@@ -226,6 +246,13 @@ app.post('/new-message', async (req, res) => {
                     }
                 } else {
                     let tuple = arrStk[actInd]
+                    if (
+                        tuple[COL_STK_ARTICUL - 1] !== item &&
+                        tuple[COL_STK_MODEL_AND_COLOUR - 1] !== item
+                    ) {
+                        await extractDataFromTableOrCache(true)
+                        await sendMessage(chatId, 'Подтвердите выбор', composeButtonsFromArray([item]))
+                    }
                     let avail = ''
                     SIZES.forEach(
                         (size, i) =>
@@ -572,8 +599,6 @@ app.post('/new-message', async (req, res) => {
 
 })
 
-let arrStk = await doc.sheetsByTitle[SH_STK].getCellsInRange(ADDR_STK_DATA)
-
 const dictCities = await async function () {
     //await doc.loadInfo()
     const sheet = doc.sheetsByTitle[SH_DICT]
@@ -587,10 +612,6 @@ const dictModelAndColour = await async function () {
     modelAndColours = convert2DimArrayInto1Dim(modelAndColours)
     return modelAndColours
 }()
-
-async function reloadStk() {
-    arrStk = await doc.sheetsByTitle[SH_STK].getCellsInRange(ADDR_STK_DATA)
-}
 
 export const dictArticuls = await async function () {
     let articuls = slice2d(arrStk, 0, COL_STK_ARTICUL - 1, arrStk.length, 1)
