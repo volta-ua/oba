@@ -83,9 +83,9 @@ async function reloadStk() {
 await reloadInfo()
 await reloadStk()
 
-async function extractDataFromTableOrCache() {
+async function extractDataFromTableOrCache(isForce) {
     let dtNow = new Date()
-    if (dtNow.getTime() - ctx.reload_stk_last_date.getTime() > RELOAD_STK_MS) {
+    if (isForce || dtNow.getTime() - ctx.reload_stk_last_date.getTime() > RELOAD_STK_MS) {
         await reloadInfo()
         await reloadStk()
         ctx.reload_stk_last_date = dtNow
@@ -252,6 +252,7 @@ app.post('/new-message', async (req, res) => {
                     ) {
                         await extractDataFromTableOrCache(true)
                         await sendMessage(chatId, 'Подтвердите выбор', composeButtonsFromArray([item]))
+                        return
                     }
                     let avail = ''
                     SIZES.forEach(
