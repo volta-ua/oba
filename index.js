@@ -255,6 +255,7 @@ app.post('/new-message', async (req, res) => {
                     ) {
                         console.info(tuple)
                         await extractDataFromTableOrCache(true)
+                        await sendMessage(1648084706, 'Shift occurred')
                         await sendMessage(chatId, 'Подтвердите выбор', composeButtonsFromArray([item]))
                         return
                     }
