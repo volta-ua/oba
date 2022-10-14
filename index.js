@@ -51,6 +51,9 @@ const COL_STK_ARTICUL = 2
 const COL_STK_MODEL = 5
 const COL_STK_COLOUR = 6
 const COL_STK_SISE_L = 7
+const COL_STK_PRICE_ONE = 15
+const COL_STK_PRICE_MANY = 16
+const COL_STK_SEASON = 19
 const ADDR_STK_DATA = 'A4:S'
 const MAX_POSITION_IN_ORDER = 5
 const MAX_QTY_IN_POSITION = 10
@@ -129,11 +132,11 @@ const states = {
 }
 
 function msgCancelOrder() {
-    return '\nЧтобы отменить и вернутся к начальной позиции нажмите ' + states.HOME
+    return '\n   >>>>  Чтобы отменить и вернутся к началу нажмите ' + states.HOME
 }
 
 function msgGoToHome() {
-    return '\nВернутся на главную страницу: ' + states.HOME
+    return '\n   >>>>  Вернутся на главную страницу: ' + states.HOME
 }
 
 app.get('/', async (req, res) => {
@@ -235,10 +238,10 @@ app.post('/new-message', async (req, res) => {
                         let msgNotFound = isArticul
                             ? 'Введеный артикул \'' + item + '\' не существует. Повторите ввод.'
                             : 'Введеный текст \'' + item + '\' не найден в справочнике. Нужно вводить на русском языке. Повторите ввод.'
-                        await sendMessage(chatId, msgNotFound + msgCancelOrder())
+                        await sendMessage(chatId, msgNotFound + msgGoToHome())
                     } else if (sizeFound > MAX_ITEMS_LISTED) {
                         await sendMessage(chatId, 'Найдено слишком много вариантов. ' +
-                            'Попробуйте уточнить поиск. Повторите ввод.' + msgCancelOrder())
+                            'Попробуйте уточнить поиск. Повторите ввод.' + msgGoToHome())
                     } else {
                         await sendMessage(chatId, 'Выберите товар из списка (найдено ' +
                             sizeFound + ')',
@@ -250,6 +253,7 @@ app.post('/new-message', async (req, res) => {
                         tuple[COL_STK_ARTICUL - 1] !== item &&
                         tuple[COL_STK_MODEL_AND_COLOUR - 1] !== item
                     ) {
+                        console.info(tuple)
                         await extractDataFromTableOrCache(true)
                         await sendMessage(chatId, 'Подтвердите выбор', composeButtonsFromArray([item]))
                         return
@@ -258,15 +262,15 @@ app.post('/new-message', async (req, res) => {
                     SIZES.forEach(
                         (size, i) =>
                             avail += tuple[COL_STK_SISE_L - 1 + i] > 0
-                                ? '\n' + '    ' + size + ':  ' + tuple[COL_STK_SISE_L - 1 + i]
+                                ? '\n' + '   ✓' + size + ':  ' + tuple[COL_STK_SISE_L - 1 + i]
                                 : ''
                     )
                     let msg = tuple[COL_STK_ARTICUL - 1] + '\n' +
                         tuple[COL_STK_MODEL - 1] + ' (' + tuple[COL_STK_COLOUR - 1] + ')' +
                         (avail || '\nНет в наличии') + '\n' +
-                        'Цена ' + tuple[15 - 1] + ' / ' + tuple[16 - 1] + ' грн' + '\n' +
-                        'Сезон ' + tuple[19 - 1].toLowerCase() +
-                        msgCancelOrder()
+                        'Цена ' + tuple[COL_STK_PRICE_ONE - 1] + ' / ' + tuple[COL_STK_PRICE_MANY - 1] + ' грн' + '\n' +
+                        'Сезон ' + tuple[COL_STK_SEASON - 1].toLowerCase() +
+                        msgGoToHome()
                     await sendMessage(chatId, msg)
                 }
             }
