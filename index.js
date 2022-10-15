@@ -215,65 +215,74 @@ app.post('/new-message', async (req, res) => {
 
         case states.AVAIL:
             users[chatId] = {state: states.AVAIL}
-            await extractDataFromTableOrCache()
             if (messageText === MSG_AVAIL) {
-                await sendMessage(chatId, 'Введите артикул (5 цифр) или название товара (модель-цвет: достаточно несколько символов, в том числе не подряд).' + msgGoToHome())
+                await extractDataFromTableOrCache()
+                await sendMessage(
+                    chatId,
+                    'Введите артикул (5 цифр) или название товара (модель-цвет: достаточно несколько символов, в том числе не подряд).' +
+                    msgGoToHome()
+                )
             } else {
-                const MAX_ITEMS_LISTED = 50
-                let dictItems = null
-                let isArticul = null
-                if (messageText.match('^[0-9]{5}$')) {
-                    dictItems = dictArticuls
-                    isArticul = true
-                } else {
-                    dictItems = dictModelAndColour
-                    isArticul = false
-                }
-                let item = messageText.toLowerCase()
-                let actInd = includesIgnoringCase(dictItems, item)
-                if (actInd === false) {
-                    let found = filterArray(dictItems, item, true)
-                    let sizeFound = found?.length
-                    if (!found || sizeFound === 0) {
-                        let msgNotFound = isArticul
-                            ? 'Введеный артикул \'' + item + '\' не существует. Повторите ввод.'
-                            : 'Введеный текст \'' + item + '\' не найден в справочнике. Нужно вводить на русском языке. Повторите ввод.'
-                        await sendMessage(chatId, msgNotFound + msgGoToHome())
-                    } else if (sizeFound > MAX_ITEMS_LISTED) {
-                        await sendMessage(chatId, 'Найдено слишком много вариантов. ' +
-                            'Попробуйте уточнить поиск. Повторите ввод.' + msgGoToHome())
-                    } else {
-                        await sendMessage(chatId, 'Выберите товар из списка (найдено ' +
-                            sizeFound + ')',
-                            composeButtonsFromArray(found))
-                    }
-                } else {
-                    let tuple = arrStk[actInd]
-                    if (
-                        tuple[COL_STK_ARTICUL - 1] !== item &&
-                        tuple[COL_STK_MODEL_AND_COLOUR - 1] !== item
-                    ) {
-                        console.info(tuple)
-                        await extractDataFromTableOrCache(true)
-                        await sendMessage(1648084706, 'Shift occurred')
-                        await sendMessage(chatId, 'Подтвердите выбор', composeButtonsFromArray([item]))
-                        return
-                    }
-                    let avail = ''
-                    SIZES.forEach(
-                        (size, i) =>
-                            avail += tuple[COL_STK_SISE_L - 1 + i] > 0
-                                ? '\n' + '   ✓' + size + ':  ' + tuple[COL_STK_SISE_L - 1 + i]
-                                : ''
+                await extractDataFromTableOrCache()
+                    .then(
+                        async () => {
+                            const MAX_ITEMS_LISTED = 50
+                            let dictItems = null
+                            let isArticul = null
+                            if (messageText.match('^[0-9]{5}$')) {
+                                dictItems = dictArticuls
+                                isArticul = true
+                            } else {
+                                dictItems = dictModelAndColour
+                                isArticul = false
+                            }
+                            let item = messageText.toLowerCase()
+                            let actInd = includesIgnoringCase(dictItems, item)
+                            if (actInd === false) {
+                                let found = filterArray(dictItems, item, true)
+                                let sizeFound = found?.length
+                                if (!found || sizeFound === 0) {
+                                    let msgNotFound = isArticul
+                                        ? 'Введеный артикул \'' + item + '\' не существует. Повторите ввод.'
+                                        : 'Введеный текст \'' + item +
+                                        '\' не найден в справочнике. Нужно вводить на русском языке. Повторите ввод.'
+                                    await sendMessage(chatId, msgNotFound + msgGoToHome())
+                                } else if (sizeFound > MAX_ITEMS_LISTED) {
+                                    await sendMessage(chatId, 'Найдено слишком много вариантов. ' +
+                                        'Попробуйте уточнить поиск. Повторите ввод.' + msgGoToHome())
+                                } else {
+                                    await sendMessage(chatId, 'Выберите товар из списка (найдено ' +
+                                        sizeFound + ')',
+                                        composeButtonsFromArray(found))
+                                }
+                            } else {
+                                let tuple = arrStk[actInd]
+                                if (
+                                    tuple[COL_STK_ARTICUL - 1] !== item &&
+                                    tuple[COL_STK_MODEL_AND_COLOUR - 1] !== item
+                                ) {
+                                    await extractDataFromTableOrCache(true).then(
+                                        () => sendMessage(chatId, 'Подтвердите выбор', composeButtonsFromArray([item]))
+                                    )
+                                    return
+                                }
+                                let avail = ''
+                                SIZES.forEach(
+                                    (size, i) =>
+                                        avail += tuple[COL_STK_SISE_L - 1 + i] > 0
+                                            ? '\n' + '   ✓' + size + ':  ' + tuple[COL_STK_SISE_L - 1 + i]
+                                            : ''
+                                )
+                                let msg = tuple[COL_STK_ARTICUL - 1] + '\n' +
+                                    tuple[COL_STK_MODEL - 1] + ' (' + tuple[COL_STK_COLOUR - 1] + ')' +
+                                    (avail || '\nНет в наличии') + '\n' +
+                                    'Цена ' + tuple[COL_STK_PRICE_ONE - 1] + ' / ' + tuple[COL_STK_PRICE_MANY - 1] + ' грн' + '\n' +
+                                    'Сезон ' + tuple[COL_STK_SEASON - 1].toLowerCase() +
+                                    msgGoToHome()
+                                await sendMessage(chatId, msg)
+                            }
+                        }
                     )
-                    let msg = tuple[COL_STK_ARTICUL - 1] + '\n' +
-                        tuple[COL_STK_MODEL - 1] + ' (' + tuple[COL_STK_COLOUR - 1] + ')' +
-                        (avail || '\nНет в наличии') + '\n' +
-                        'Цена ' + tuple[COL_STK_PRICE_ONE - 1] + ' / ' + tuple[COL_STK_PRICE_MANY - 1] + ' грн' + '\n' +
-                        'Сезон ' + tuple[COL_STK_SEASON - 1].toLowerCase() +
-                        msgGoToHome()
-                    await sendMessage(chatId, msg)
-                }
             }
             break
 
