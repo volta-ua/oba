@@ -3,7 +3,8 @@ import express from 'express'
 import {GoogleSpreadsheet} from 'google-spreadsheet'
 import {
     isValidPhonePartner, isClientNameValid, isValidNPmethod, isClientPhoneValid,
-    isNpWhValid, isUpIndexValid, isItemValid, isSizeValid, isQtyValid, isValidPhotoPaym
+    isNpWhValid, isUpIndexValid, isItemValid, isSizeValid, isQtyValid, isValidPhotoPaym,
+    isLegalInputForRegExp
 } from './validation.js'
 import {
     composeAuthButtons, composeInitButtons, composeButtonsFromArray, composeNPmethodButtons,
@@ -72,31 +73,6 @@ await doc.useServiceAccountAuth({
     client_email: process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL,
     private_key: process.env.GOOGLE_PRIVATE_KEY.replace(/\\n/g, '\n')
 })
-
-let arrStk
-
-async function reloadInfo() {
-    await doc.loadInfo()
-        .then(res => console.log('reloadInfo done'))
-}
-
-async function reloadStk() {
-    arrStk = await doc.sheetsByTitle[SH_STK].getCellsInRange(ADDR_STK_DATA)
-        .then(res => console.log('reloadStk done'))
-}
-
-await reloadInfo()
-await reloadStk()
-
-async function extractDataFromTableOrCache(isForce) {
-    let dtNow = new Date()
-    if (isForce || dtNow.getTime() - ctx.reload_stk_last_date.getTime() > RELOAD_STK_MS) {
-        await reloadInfo()
-        await reloadStk()
-        ctx.reload_stk_last_date = dtNow
-    }
-}
-
 
 const ctx = {
     'reload_stk_last_date': new Date()
@@ -218,7 +194,7 @@ app.post('/new-message', async (req, res) => {
         case states.AVAIL:
             users[chatId] = {state: states.AVAIL}
             if (messageText === MSG_AVAIL) {
-                await extractDataFromTableOrCache()
+                await extractDataFromTableOrCache(true)
                 await sendMessage(
                     chatId,
                     'Введите артикул (5 цифр) или название товара (модель-цвет: достаточно несколько символов, в том числе не подряд).' +
@@ -232,13 +208,17 @@ app.post('/new-message', async (req, res) => {
                             let dictItems = null
                             let isArticul = null
                             if (messageText.match('^[0-9]{5}$')) {
-                                dictItems = dictArticuls
+                                dictItems = await getDictArticuls()
                                 isArticul = true
                             } else {
-                                dictItems = dictModelAndColour
+                                dictItems = await getDictModelAndColour()
                                 isArticul = false
                             }
                             let item = messageText.toLowerCase()
+                            if (!isLegalInputForRegExp(item)) {
+                                await sendMessage(chatId, 'Не допустимый ввод' + msgGoToHome())
+                                return
+                            }
                             let actInd = includesIgnoringCase(dictItems, item)
                             if (actInd === false) {
                                 let found = filterArray(dictItems, item, true)
@@ -266,7 +246,6 @@ app.post('/new-message', async (req, res) => {
                                     await extractDataFromTableOrCache(true).then(
                                         () => sendMessage(chatId, 'Подтвердите выбор', composeButtonsFromArray([item]))
                                     )
-                                    return
                                 }
                                 let avail = ''
                                 SIZES.forEach(
@@ -425,6 +404,11 @@ app.post('/new-message', async (req, res) => {
         case states.NP_CITY:
             const MAX_CITIES_LISTED = 15
             let city = makeFirstLetterCapital(messageText)
+            if (!isLegalInputForRegExp(city)) {
+                await sendMessage(chatId, 'Недопустимый ввод.' +
+                    msgCancelOrder())
+                return
+            }
             if (!includesIgnoringCase(dictCities, city)) {
                 let found = filterArray(dictCities, city)
                 let sizeFound = found?.length
@@ -616,25 +600,53 @@ app.post('/new-message', async (req, res) => {
 
 })
 
-const dictCities = await async function () {
-    //await doc.loadInfo()
+async function reloadInfo() {
+    await doc.loadInfo()
+        .then(res => console.log('reloadInfo done'))
+}
+
+let arrStk = null
+
+async function reloadStk() {
+    arrStk = await doc.sheetsByTitle[SH_STK].getCellsInRange(ADDR_STK_DATA)
+    console.log('reloadStk done')
+}
+
+async function extractDataFromTableOrCache(isForce) {
+    let dtNow = new Date()
+    if (isForce || dtNow.getTime() - ctx.reload_stk_last_date.getTime() > RELOAD_STK_MS) {
+        await reloadInfo()
+        await reloadStk()
+        ctx.reload_stk_last_date = dtNow
+    }
+    console.log('extractDataFromTableOrCache done with reload_stk_last_date = ' + ctx.reload_stk_last_date)
+}
+
+async function dictCities() {
     const sheet = doc.sheetsByTitle[SH_DICT]
     let cities = await sheet.getCellsInRange(ADDR_DICT_CITIES)
     cities = convert2DimArrayInto1Dim(cities)
+    console.log('dictCities done')
     return cities
-}()
+}
 
-const dictModelAndColour = await async function () {
+async function getDictModelAndColour() {
     let modelAndColours = slice2d(arrStk, 0, COL_STK_MODEL_AND_COLOUR - 1, arrStk.length, 1)
     modelAndColours = convert2DimArrayInto1Dim(modelAndColours)
+    console.log('getDictModelAndColour done')
     return modelAndColours
-}()
+}
 
-export const dictArticuls = await async function () {
+async function getDictArticuls() {
     let articuls = slice2d(arrStk, 0, COL_STK_ARTICUL - 1, arrStk.length, 1)
     articuls = convert2DimArrayInto1Dim(articuls)
+    console.log('getDictArticuls done')
     return articuls
-}()
+}
+
+await extractDataFromTableOrCache(true)
+await getDictModelAndColour()
+await getDictArticuls()
 
 const PORT = configMode.app.port
 app.listen(PORT, () => {

@@ -1,7 +1,7 @@
 import axios from "axios";
 import {
     NP_METHOD_DOOR, NP_METHOD_POST, NP_METHOD_WH,
-    dictArticuls, TELEGRAM_URI_FILE_ID, TELEGRAM_URI_FILE
+    TELEGRAM_URI_FILE_ID, TELEGRAM_URI_FILE
 } from "./index.js";
 import {writeImage} from "./image.js";
 
@@ -62,4 +62,15 @@ export async function isValidPhotoPaym(photo) {
         console.log(e)
         return false
     }
+}
+
+export function isLegalInputForRegExp(input) {
+    let isOk = true
+    try {
+        ''.match(input)
+    } catch (e) {
+        console.error(e)
+        isOk = false
+    }
+    return isOk
 }
