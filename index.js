@@ -77,10 +77,12 @@ let arrStk
 
 async function reloadInfo() {
     await doc.loadInfo()
+        .then(res => console.log('reloadInfo done'))
 }
 
 async function reloadStk() {
     arrStk = await doc.sheetsByTitle[SH_STK].getCellsInRange(ADDR_STK_DATA)
+        .then(res => console.log('reloadStk done'))
 }
 
 await reloadInfo()
