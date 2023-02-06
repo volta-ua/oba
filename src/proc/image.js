@@ -9,7 +9,6 @@ function authorize(credentials, callback) {
     const oAuth2Client = new google.auth.OAuth2(
         client_id, client_secret, redirect_uris[0])
 
-    // Check if we have previously stored a token.
     fs.readFile(TOKEN_PATH, (err, token) => {
         if (err) return getAccessToken(oAuth2Client, callback)
         oAuth2Client.setCredentials(JSON.parse(token))
@@ -32,7 +31,6 @@ function uploadFile(auth) {
         fields: 'id'
     }, (err, file) => {
         if (err) {
-            // Handle error
             console.error(err)
         } else {
             console.log('File Id: ', file.id)

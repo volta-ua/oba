@@ -2,7 +2,7 @@
   "name": "oba",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "src/index.js",
   "keywords": [],
   "author": "",
   "license": "ISC",
@@ -18,8 +18,8 @@
   },
   "type": "module",
   "scripts": {
-    "prod": "NODE_ENV=PROD node index.js",
-    "dev": "nodemon index.js"
+    "prod": "NODE_ENV=PROD node src/index.js",
+    "dev": "nodemon src/index.js"
   },
   "devDependencies": {
     "nodemon": "^2.0.19"

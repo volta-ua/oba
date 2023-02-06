@@ -5,20 +5,20 @@ import {
     isValidPhonePartner, isClientNameValid, isValidNPmethod, isClientPhoneValid,
     isNpWhValid, isUpIndexValid, isItemValid, isSizeValid, isQtyValid, isValidPhotoPaym,
     isLegalInputForRegExp
-} from './validation.js'
+} from './validation/validation.js'
 import {
     composeAuthButtons, composeInitButtons, composeButtonsFromArray, composeNPmethodButtons,
     composeQtyButtons, composeSizeButtons, composeTypeButtons, composOrderConfirmButtons
-} from './compositor.js'
-import {placeOrder} from './placeOrder.js'
+} from './proc/compositor.js'
+import {placeOrder} from './proc/placeOrder.js'
 import {
     convert2DimArrayInto1Dim,
     filterArray,
     includesIgnoringCase,
     makeFirstLetterCapital,
     slice2d
-} from './service.js'
-import {generateOrderId} from "./util.js"
+} from './service/service.js'
+import {generateOrderId} from "./proc/util.js"
 import configMode from "./config.js"
 
 console.log(JSON.stringify(configMode))
@@ -43,9 +43,11 @@ const TELEGRAM_URI_SEND_MESSAGE = `${TELEGRAM_URI}/sendMessage`
 export const TELEGRAM_URI_FILE = `https://api.telegram.org/file/bot${configMode.bot.TELEGRAM_API_TOKEN}`
 export const TELEGRAM_URI_FILE_ID = `${TELEGRAM_URI}/getFile?file_id=`
 const TELEGRAM_SUPPORT = process.env.TELEGRAM_SUPPORT
-const CODE_UA = '38'
+
 const SH_DICT = 'DICT'
 const ADDR_DICT_CITIES = 'P2:P'
+const ADDR_DICT_USER_CONF = 'B14:B14'
+const IND_USER_CONF_MSG_AVAIL = 0
 const SH_STK = 'STOCK'
 const COL_STK_MODEL_AND_COLOUR = 1
 const COL_STK_ARTICUL = 2
@@ -58,6 +60,8 @@ const COL_STK_SEASON = 19
 const ADDR_STK_DATA = 'A4:S'
 const MAX_POSITION_IN_ORDER = 5
 const MAX_QTY_IN_POSITION = 10
+
+const CODE_UA = '38'
 const SIZES = [35, 36, 37, 38, 39, 40, 41]
 const RELOAD_STK_MS = 5 * 60 * 1000
 
@@ -119,6 +123,12 @@ function msgGoToHome() {
 
 app.get('/', async (req, res) => {
     res.send('App is working')
+})
+
+app.post('/reload', async (rec, res) => {
+    await reloadAll()
+    console.log('reloaded externally')
+    res.json({status: 'ok'})
 })
 
 app.post('/new-message', async (req, res) => {
@@ -258,7 +268,8 @@ app.post('/new-message', async (req, res) => {
                                     tuple[COL_STK_MODEL - 1] + ' (' + tuple[COL_STK_COLOUR - 1] + ')' +
                                     (avail || '\nНет в наличии') + '\n' +
                                     'Цена ' + tuple[COL_STK_PRICE_ONE - 1] + ' / ' + tuple[COL_STK_PRICE_MANY - 1] + ' грн' + '\n' +
-                                    'Сезон ' + tuple[COL_STK_SEASON - 1].toLowerCase() +
+                                    'Сезон ' + tuple[COL_STK_SEASON - 1].toLowerCase() + '\n' +
+                                    userConf[IND_USER_CONF_MSG_AVAIL] +
                                     msgGoToHome()
                                 await sendMessage(chatId, msg)
                             }
@@ -409,8 +420,9 @@ app.post('/new-message', async (req, res) => {
                     msgCancelOrder())
                 return
             }
-            if (!includesIgnoringCase(dictCities, city)) {
-                let found = filterArray(dictCities, city)
+            const retrievedCities = await retrieveCities()
+            if (!includesIgnoringCase(retrievedCities, city)) {
+                let found = filterArray(retrievedCities, city)
                 let sizeFound = found?.length
                 if (!found || sizeFound === 0) {
                     await sendMessage(chatId, 'Введеный текст \'' + city +
@@ -600,16 +612,9 @@ app.post('/new-message', async (req, res) => {
 
 })
 
-async function reloadInfo() {
-    await doc.loadInfo()
-        .then(res => console.log('reloadInfo done'))
-}
-
-let arrStk = null
-
-async function reloadStk() {
-    arrStk = await doc.sheetsByTitle[SH_STK].getCellsInRange(ADDR_STK_DATA)
-    console.log('reloadStk done')
+async function reloadAll() {
+    await extractDataFromTableOrCache(true)
+    await reloadUserConf()
 }
 
 async function extractDataFromTableOrCache(isForce) {
@@ -622,11 +627,33 @@ async function extractDataFromTableOrCache(isForce) {
     console.log('extractDataFromTableOrCache done with reload_stk_last_date = ' + ctx.reload_stk_last_date)
 }
 
-async function dictCities() {
+async function reloadInfo() {
+    await doc.loadInfo()
+        .then(res => console.log('reloadInfo done'))
+}
+
+let arrStk = null
+
+async function reloadStk() {
+    arrStk = await doc.sheetsByTitle[SH_STK].getCellsInRange(ADDR_STK_DATA)
+    console.log('reloadStk done')
+}
+
+let userConf = null
+
+async function reloadUserConf() {
+    const timeStart = new Date().getTime()
+    const sheet = doc.sheetsByTitle[SH_DICT]
+    userConf = await sheet.getCellsInRange(ADDR_DICT_USER_CONF)
+    userConf = convert2DimArrayInto1Dim(userConf)
+    console.log('reloadUserConf done ' + (new Date().getTime() - timeStart))
+}
+
+async function retrieveCities() {
     const sheet = doc.sheetsByTitle[SH_DICT]
     let cities = await sheet.getCellsInRange(ADDR_DICT_CITIES)
     cities = convert2DimArrayInto1Dim(cities)
-    console.log('dictCities done')
+    console.log('retrieveCities done')
     return cities
 }
 
@@ -644,7 +671,12 @@ async function getDictArticuls() {
     return articuls
 }
 
-await extractDataFromTableOrCache(true)
+
+async function retrieveUserConf() {
+    return userConf
+}
+
+await reloadAll()
 await getDictModelAndColour()
 await getDictArticuls()
 

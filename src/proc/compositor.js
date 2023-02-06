@@ -2,7 +2,7 @@ import {
     DELIV_TYPE_NP, DELIV_TYPE_NP_POD, DELIV_TYPE_UP, DELIV_TYPE_OTHER,
     NP_METHOD_WH, NP_METHOD_POST, NP_METHOD_DOOR,
     MSG_CLEAR, MSG_SEND, MSG_ADD_POSITION, MSG_NEW_ORDER, MSG_AVAIL, MSG_AUTH
-} from './index.js'
+} from '../index.js'
 
 export function composeInitButtons() {
     return {
@@ -10,7 +10,7 @@ export function composeInitButtons() {
         'reply_markup': {
             'one_time_keyboard': true,
             'keyboard': [
-                //[MSG_NEW_ORDER],
+                [MSG_NEW_ORDER],
                 [MSG_AVAIL]
             ]
         }

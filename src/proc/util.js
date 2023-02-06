@@ -1,4 +1,4 @@
-import {lpad} from "./service.js";
+import {lpad} from "../service/service.js";
 
 export function generateOrderId(user, dt) {
     return 'N' + Object.keys(user)[0] +
