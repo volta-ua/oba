@@ -10,8 +10,7 @@ export function composeInitButtons() {
         'reply_markup': {
             'one_time_keyboard': true,
             'keyboard': [
-                [MSG_NEW_ORDER],
-                [MSG_AVAIL]
+                 [MSG_AVAIL]
             ]
         }
     }
