@@ -134,7 +134,7 @@ app.post('/reload', async (rec, res) => {
 app.post('/new-message', async (req, res) => {
     const message = req.body?.message ?? req.body?.edited_message
     const phonePartner = message?.contact?.phone_number?.trim()
-    const photo = message.photo ? message.photo[0] : null
+    const photo = message?.photo ? message.photo[0] : null
     const chatId = message?.chat?.id
     let messageText = message?.text?.trim()
     console.info('====================')
@@ -642,11 +642,10 @@ async function reloadStk() {
 let userConf = null
 
 async function reloadUserConf() {
-    const timeStart = new Date().getTime()
     const sheet = doc.sheetsByTitle[SH_DICT]
     userConf = await sheet.getCellsInRange(ADDR_DICT_USER_CONF)
     userConf = convert2DimArrayInto1Dim(userConf)
-    console.log('reloadUserConf done ' + (new Date().getTime() - timeStart))
+    console.log('reloadUserConf done ')
 }
 
 async function retrieveCities() {
@@ -669,11 +668,6 @@ async function getDictArticuls() {
     articuls = convert2DimArrayInto1Dim(articuls)
     console.log('getDictArticuls done')
     return articuls
-}
-
-
-async function retrieveUserConf() {
-    return userConf
 }
 
 await reloadAll()
