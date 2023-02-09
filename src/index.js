@@ -227,7 +227,7 @@ app.post('/new-message', async (req, res) => {
                             }
                             let item = messageText.toLowerCase()
                             if (!isLegalInputForRegExp(item)) {
-                                await sendMessage(chatId, 'Не допустимый ввод' + msgGoToHome())
+                                await sendMessage(chatId, 'Не допустимый ввод\n' + msgGoToHome())
                                 return
                             }
                             let actInd = includesIgnoringCase(dictItems, item)
@@ -236,13 +236,13 @@ app.post('/new-message', async (req, res) => {
                                 let sizeFound = found?.length
                                 if (!found || sizeFound === 0) {
                                     let msgNotFound = isArticul
-                                        ? 'Введеный артикул \'' + item + '\' не существует. Повторите ввод.'
+                                        ? 'Введеный артикул \'' + item + '\' не существует. Повторите ввод.\n'
                                         : 'Введеный текст \'' + item +
                                         '\' не найден в справочнике. Нужно вводить на русском языке. Повторите ввод.' + '\n'
                                     await sendMessage(chatId, msgNotFound + msgGoToHome())
                                 } else if (sizeFound > MAX_ITEMS_LISTED) {
                                     await sendMessage(chatId, 'Найдено слишком много вариантов. ' +
-                                        'Попробуйте уточнить поиск. Повторите ввод.' + msgGoToHome())
+                                        'Попробуйте уточнить поиск. Повторите ввод.\n' + msgGoToHome())
                                 } else {
                                     await sendMessage(chatId, 'Выберите товар из списка (найдено ' +
                                         sizeFound + ')',
@@ -562,12 +562,12 @@ app.post('/new-message', async (req, res) => {
                         'В течение 24 часов (кроме выходных и праздничных дней) ' +
                         'Вы получите ответ от менеджера или в автоматическом режиме, что заказ принят.\n' +
                         'Важно: если не будет оповещения, то обратитесь к менеджеру ' +
-                        TELEGRAM_SUPPORT + ' во избежание потери заказа!' + msgGoToHome())
+                        TELEGRAM_SUPPORT + ' во избежание потери заказа!\n' + msgGoToHome())
                     await placeOrder(doc, users[chatId].order)
                     break
                 case MSG_CLEAR:
                     users[chatId].state = states.HOME
-                    await sendMessage(chatId, 'Заказ сброшен.' + msgGoToHome())
+                    await sendMessage(chatId, 'Заказ сброшен.\n' + msgGoToHome())
                     break
                 default:
                     let pos = users[chatId].order.pos
@@ -583,7 +583,7 @@ app.post('/new-message', async (req, res) => {
 
         default:
             console.log('default for messageText ' + messageText)
-            await sendMessage(chatId, 'Ответ не определен.' +
+            await sendMessage(chatId, 'Ответ не определен.\n' +
                 msgGoToHome() + '.\nСправочная ифнормация находится по ' + states.HELP +
                 '.\nПо определенным вопросам можете обратится к менеджеру ' + TELEGRAM_SUPPORT)
     }
