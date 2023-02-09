@@ -122,7 +122,7 @@ function msgGoToHome() {
 }
 
 app.get('/', async (req, res) => {
-    res.send('App is working')
+    res.send('App is working now')
 })
 
 app.post('/reload', async (rec, res) => {
@@ -197,6 +197,7 @@ app.post('/new-message', async (req, res) => {
                 'Сайт: https://oba.com.ua\n' +
                 'Telegram: https://t.me/artshoesua\n' +
                 'Instagram: https://www.instagram.com/artshoes.ua/\n' +
+                'Мониторинг посылок: ' + process.env.URL_TTN + '\n' +
                 msgGoToHome()
             await sendMessage(chatId, msgAbout)
             break
@@ -284,7 +285,8 @@ app.post('/new-message', async (req, res) => {
                 'Рады приветствовать Вас в Telegram-боте компании производителя стильной женской обуви.\n' +
                 'Справочная информация: ' + states.HELP + '\n' +
                 'Поддержка: ' + TELEGRAM_SUPPORT + '\n' +
-                'Про компанию: ' + states.ABOUT
+                'Про компанию: ' + states.ABOUT + '\n' +
+                msgGoToHome()
             await sendMessage(chatId, msgHome, composeInitButtons())
             break
 
