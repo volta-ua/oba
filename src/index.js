@@ -197,7 +197,7 @@ app.post('/new-message', async (req, res) => {
                 'Сайт: https://oba.com.ua\n' +
                 'Telegram: https://t.me/artshoesua\n' +
                 'Instagram: https://www.instagram.com/artshoes.ua/\n' +
-                'Мониторинг посылок: ' + process.env.URL_TTN + '\n' +
+                'Мониторинг посылок: ' + process.env.URL_TTN +
                 msgGoToHome()
             await sendMessage(chatId, msgAbout)
             break
