@@ -208,7 +208,7 @@ app.post('/new-message', async (req, res) => {
                 await extractDataFromTableOrCache(true)
                 await sendMessage(
                     chatId,
-                    'Введите артикул (5 цифр) или название товара (модель-цвет: достаточно несколько символов, в том числе не подряд).' +
+                    'Введите артикул (5 цифр) или название товара (модель-цвет: достаточно несколько символов, в том числе не подряд).\n' +
                     msgGoToHome()
                 )
             } else {
@@ -238,7 +238,7 @@ app.post('/new-message', async (req, res) => {
                                     let msgNotFound = isArticul
                                         ? 'Введеный артикул \'' + item + '\' не существует. Повторите ввод.'
                                         : 'Введеный текст \'' + item +
-                                        '\' не найден в справочнике. Нужно вводить на русском языке. Повторите ввод.'
+                                        '\' не найден в справочнике. Нужно вводить на русском языке. Повторите ввод.' + '\n'
                                     await sendMessage(chatId, msgNotFound + msgGoToHome())
                                 } else if (sizeFound > MAX_ITEMS_LISTED) {
                                     await sendMessage(chatId, 'Найдено слишком много вариантов. ' +
@@ -270,7 +270,7 @@ app.post('/new-message', async (req, res) => {
                                     (avail || '\nНет в наличии') + '\n' +
                                     'Цена ' + tuple[COL_STK_PRICE_ONE - 1] + ' / ' + tuple[COL_STK_PRICE_MANY - 1] + ' грн' + '\n' +
                                     'Сезон ' + tuple[COL_STK_SEASON - 1].toLowerCase() + '\n' +
-                                    userConf[IND_USER_CONF_MSG_AVAIL] +
+                                    userConf[IND_USER_CONF_MSG_AVAIL] + '\n' +
                                     msgGoToHome()
                                 await sendMessage(chatId, msg)
                             }
@@ -428,7 +428,7 @@ app.post('/new-message', async (req, res) => {
                 let sizeFound = found?.length
                 if (!found || sizeFound === 0) {
                     await sendMessage(chatId, 'Введеный текст \'' + city +
-                        '\' не найден в справочнике. Населенный пункт нужно вводить на украинском языке. Повторите ввод.' +
+                        '\' не найден в справочнике. Населенный пункт нужно вводить на украинском языке. Повторите ввод.' + '\n' +
                         msgCancelOrder())
                 } else if (sizeFound > MAX_CITIES_LISTED) {
                     await sendMessage(chatId, 'Найдено слишком много вариантов. ' +
@@ -485,7 +485,7 @@ app.post('/new-message', async (req, res) => {
                 await sendMessage(chatId, 'Индекс ' + messageText +
                     ' не прошел валидацию.\n' + 'Индекс отделения Укрпошты: 5 цифр.\n' +
                     'В случае, если введеный индекс корректный, но не принимается, сообщите менеджеру ' +
-                    TELEGRAM_SUPPORT + '.' + msgCancelOrder())
+                    TELEGRAM_SUPPORT + '.\n' + msgCancelOrder())
             } else {
                 users[chatId].order.upIndex = messageText
                 users[chatId].state = states.ITEM
