@@ -194,10 +194,10 @@ app.post('/new-message', async (req, res) => {
         case states.ABOUT:
             users[chatId] = {state: states.ABOUT}
             let msgAbout = 'Мы интернет-магазин "СТИЛЬНАЯ ОБУВЬ" - украинский производитель ЖЕНСКОЙ кожаной обуви.\n' +
-                'Сайт: https://oba.com.ua\n' +
-                'Telegram: https://t.me/artshoesua\n' +
-                'Instagram: https://www.instagram.com/artshoes.ua/\n' +
-                'Мониторинг посылок: ' + process.env.URL_TTN +
+                '🌎Сайт: https://oba.com.ua\n' +
+                '🏆Telegram: https://t.me/artshoesua\n' +
+                '🤳Instagram: https://www.instagram.com/artshoes.ua/\n' +
+                '🔎Мониторинг посылок: ' + process.env.URL_TTN + '\n' +
                 msgGoToHome()
             await sendMessage(chatId, msgAbout)
             break
@@ -282,10 +282,10 @@ app.post('/new-message', async (req, res) => {
         case states.HOME:
             users[chatId] = {state: states.HOME}
             let msgHome = 'Добрый день!\n' +
-                'Рады приветствовать Вас в Telegram-боте компании производителя стильной женской обуви.\n' +
-                'Справочная информация: ' + states.HELP + '\n' +
-                'Поддержка: ' + TELEGRAM_SUPPORT + '\n' +
-                'Про компанию: ' + states.ABOUT + '\n' +
+                '☀Рады приветствовать Вас в Telegram-боте компании производителя стильной женской обуви.\n' +
+                '❓Справочная информация: ' + states.HELP + '\n' +
+                '💁Поддержка: ' + TELEGRAM_SUPPORT + '\n' +
+                'ℹПро компанию: ' + states.ABOUT + '\n' +
                 msgGoToHome()
             await sendMessage(chatId, msgHome, composeInitButtons())
             break
