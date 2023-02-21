@@ -721,4 +721,5 @@ await getDictArticuls()
 const PORT = configMode.app.port
 app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`)
+    console.log(configMode.app.url)
 })
