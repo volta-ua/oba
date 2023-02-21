@@ -3,6 +3,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import GSheetConnector from "../google-sheet/GSheetConnector.js";
 import GSheetTableDefinition from "../google-sheet/GSheetTableDefinition.js";
+import {uniqueTwoDimArr} from "../utils/service.js";
 
 async function clearImagesFolder() {
     const FOLDER_IMAGES = 'public/images';
@@ -29,9 +30,11 @@ async function scanImagesOnDataSource() {
     const gs = new GSheetConnector(tblDef);
     await gs.create();
     let arrData = await gs.getData()
+    const layout = tblDef.layout
     arrData = arrData.filter(
-        el => el[0] && el[0] !== '-'
+        el => el[layout.Articul] && el[layout.Articul] !== '-'
     )
+    arrData = uniqueTwoDimArr(arrData, layout.Articul)
     console.log(arrData)
     return arrData
 }

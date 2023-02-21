@@ -9,3 +9,11 @@ export function numberToLetter(numb) {
     return letter;
 
 }
+
+export function uniqueTwoDimArr(arr, ind = 0) {
+    const arrKeys = arr.map(el => el[ind])
+    arr = arr.filter(
+        (el, i) => arrKeys.indexOf(el[ind]) === i
+    )
+    return arr
+}

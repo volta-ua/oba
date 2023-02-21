@@ -7,6 +7,7 @@ export default class GSheetTableDefinition {
     _indKeyCol;
     _arrColNames;
     _rowHeader;
+    _layout;
 
     constructor(id, shName, colL, indKeyCol, arrColNames, rowHeader) {
         this._id = id;
@@ -15,6 +16,15 @@ export default class GSheetTableDefinition {
         this._indKeyCol = indKeyCol;
         this._arrColNames = arrColNames;
         this._rowHeader = rowHeader;
+        this._layout = this._composeLayout(arrColNames)
+    }
+
+    _composeLayout(arrColNames) {
+        const layout = {}
+        arrColNames.forEach(
+            (el, i) => layout[el] = i
+        )
+        return layout
     }
 
     getRangeInA1Notation() {
@@ -44,5 +54,9 @@ export default class GSheetTableDefinition {
 
     get rowHeader() {
         return this._rowHeader;
+    }
+
+    get layout() {
+        return this._layout;
     }
 }
