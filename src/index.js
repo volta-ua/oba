@@ -20,6 +20,7 @@ import {
 } from './service/service.js'
 import {generateOrderId} from "./proc/util.js"
 import configMode from "./config.js"
+import {updateImagesOnServer} from "./gsheet/updateImagesOnServer.js";
 
 console.log(JSON.stringify(configMode))
 
@@ -48,6 +49,7 @@ const SH_DICT = 'DICT'
 const ADDR_DICT_CITIES = 'P2:P'
 const ADDR_DICT_USER_CONF = 'B14:B14'
 const IND_USER_CONF_MSG_AVAIL = 0
+
 const SH_STK = 'STOCK'
 const COL_STK_MODEL_AND_COLOUR = 1
 const COL_STK_ARTICUL = 2
@@ -61,6 +63,11 @@ const ADDR_STK_DATA = 'A4:S'
 const MAX_POSITION_IN_ORDER = 5
 const MAX_QTY_IN_POSITION = 10
 
+const SH_IMG = 'FILES'
+const ADDR_IMG_DATA = 'A2:L'
+const IND_IMG_ART = 11
+const IND_IMG_URL = 1
+
 const CODE_UA = '38'
 const SIZES = [35, 36, 37, 38, 39, 40, 41]
 const RELOAD_STK_MS = 5 * 60 * 1000
@@ -72,8 +79,14 @@ app.use(express.urlencoded({
     extended: true
 }))
 
-const doc = new GoogleSpreadsheet(process.env.GOOGLE_SPREADSHEET_ID)
-await doc.useServiceAccountAuth({
+const docMain = new GoogleSpreadsheet(process.env.GOOGLE_SPREADSHEET_ID)
+await docMain.useServiceAccountAuth({
+    client_email: process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL,
+    private_key: process.env.GOOGLE_PRIVATE_KEY.replace(/\\n/g, '\n')
+})
+
+const docImg = new GoogleSpreadsheet(process.env.GOOGLE_SPREADSHEET_ID_IMG)
+await docImg.useServiceAccountAuth({
     client_email: process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL,
     private_key: process.env.GOOGLE_PRIVATE_KEY.replace(/\\n/g, '\n')
 })
@@ -128,6 +141,12 @@ app.get('/', async (req, res) => {
 app.post('/reload', async (rec, res) => {
     await reloadAll()
     console.log('reloaded externally')
+    res.json({status: 'ok'})
+})
+
+app.post('/updateImagesOnServer', async (rec, res) => {
+    await updateImagesOnServer()
+    console.log('updateImagesOnServer')
     res.json({status: 'ok'})
 })
 
@@ -271,6 +290,7 @@ app.post('/new-message', async (req, res) => {
                                     'Цена ' + tuple[COL_STK_PRICE_ONE - 1] + ' / ' + tuple[COL_STK_PRICE_MANY - 1] + ' грн' + '\n' +
                                     'Сезон ' + tuple[COL_STK_SEASON - 1].toLowerCase() + '\n' +
                                     userConf[IND_USER_CONF_MSG_AVAIL] + '\n' +
+                                    getImgUrlByArt()  + '\n' +
                                     msgGoToHome()
                                 await sendMessage(chatId, msg)
                             }
@@ -563,7 +583,7 @@ app.post('/new-message', async (req, res) => {
                         'Вы получите ответ от менеджера или в автоматическом режиме, что заказ принят.\n' +
                         'Важно: если не будет оповещения, то обратитесь к менеджеру ' +
                         TELEGRAM_SUPPORT + ' во избежание потери заказа!\n' + msgGoToHome())
-                    await placeOrder(doc, users[chatId].order)
+                    await placeOrder(docMain, users[chatId].order)
                     break
                 case MSG_CLEAR:
                     users[chatId].state = states.HOME
@@ -617,41 +637,62 @@ app.post('/new-message', async (req, res) => {
 async function reloadAll() {
     await extractDataFromTableOrCache(true)
     await reloadUserConf()
+    await reloadDocImg()
+    await reloadImg()
 }
 
 async function extractDataFromTableOrCache(isForce) {
     let dtNow = new Date()
     if (isForce || dtNow.getTime() - ctx.reload_stk_last_date.getTime() > RELOAD_STK_MS) {
-        await reloadInfo()
+        await reloadDocMain()
         await reloadStk()
         ctx.reload_stk_last_date = dtNow
     }
     console.log('extractDataFromTableOrCache done with reload_stk_last_date = ' + ctx.reload_stk_last_date)
 }
 
-async function reloadInfo() {
-    await doc.loadInfo()
-        .then(res => console.log('reloadInfo done'))
+async function reloadDocMain() {
+    await docMain.loadInfo()
+        .then(res => console.log('reloadDocMain done'))
+}
+
+async function reloadDocImg() {
+    await docImg.loadInfo()
+        .then(res => console.log('reloadDocImg done'))
 }
 
 let arrStk = null
 
 async function reloadStk() {
-    arrStk = await doc.sheetsByTitle[SH_STK].getCellsInRange(ADDR_STK_DATA)
+    arrStk = await docMain.sheetsByTitle[SH_STK].getCellsInRange(ADDR_STK_DATA)
     console.log('reloadStk done')
+}
+
+let arrImg = null
+let arrImgArt = null
+
+async function reloadImg() {
+    arrImg = await docImg.sheetsByTitle[SH_IMG].getCellsInRange(ADDR_IMG_DATA)
+    arrImgArt = arrImg.map(row => row[IND_IMG_ART])
+    console.log('reloadImg done')
+}
+
+function getImgUrlByArt(art) {
+    let actInd = arrImgArt.indexOf(art)
+    return actInd === -1 ? '' : arrImg[actInd][IND_IMG_URL]
 }
 
 let userConf = null
 
 async function reloadUserConf() {
-    const sheet = doc.sheetsByTitle[SH_DICT]
+    const sheet = docMain.sheetsByTitle[SH_DICT]
     userConf = await sheet.getCellsInRange(ADDR_DICT_USER_CONF)
     userConf = convert2DimArrayInto1Dim(userConf)
     console.log('reloadUserConf done ')
 }
 
 async function retrieveCities() {
-    const sheet = doc.sheetsByTitle[SH_DICT]
+    const sheet = docMain.sheetsByTitle[SH_DICT]
     let cities = await sheet.getCellsInRange(ADDR_DICT_CITIES)
     cities = convert2DimArrayInto1Dim(cities)
     console.log('retrieveCities done')
