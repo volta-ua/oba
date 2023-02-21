@@ -20,7 +20,7 @@ import {
 } from './service/service.js'
 import {generateOrderId} from "./proc/util.js"
 import configMode from "./config.js"
-import {updateImagesOnServer} from "./gsheet/updateImagesOnServer.js";
+import {updateImagesOnServer} from "./google-drive/updateImagesOnServer.js";
 
 console.log(JSON.stringify(configMode))
 
@@ -75,9 +75,8 @@ const RELOAD_STK_MS = 5 * 60 * 1000
 const app = express()
 
 app.use(express.json())
-app.use(express.urlencoded({
-    extended: true
-}))
+app.use(express.urlencoded({extended: true}))
+app.use(express.static('public'))
 
 const docMain = new GoogleSpreadsheet(process.env.GOOGLE_SPREADSHEET_ID)
 await docMain.useServiceAccountAuth({
@@ -290,7 +289,7 @@ app.post('/new-message', async (req, res) => {
                                     'Цена ' + tuple[COL_STK_PRICE_ONE - 1] + ' / ' + tuple[COL_STK_PRICE_MANY - 1] + ' грн' + '\n' +
                                     'Сезон ' + tuple[COL_STK_SEASON - 1].toLowerCase() + '\n' +
                                     userConf[IND_USER_CONF_MSG_AVAIL] + '\n' +
-                                    getImgUrlByArt()  + '\n' +
+                                    getImgUrlByArt() + '\n' +
                                     msgGoToHome()
                                 await sendMessage(chatId, msg)
                             }

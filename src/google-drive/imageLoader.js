@@ -3,14 +3,14 @@ import fs from 'fs'
 import {authorize} from "./auth.js";
 
 export class ImageLoader {
-    _client;
+    static _client;
 
-    constructor() {
-        this._client = authorize()
+    async init() {
+        this._client = await authorize()
     }
 
-    async downloadFile(fileId) {
-        const writableStream = fs.createWriteStream(fileId + '.jpg');
+    async downloadFile(fileId, newName) {
+        const writableStream = fs.createWriteStream('public/images/' + newName + '.jpg');
         try {
             const drive = google.drive({version: 'v3', auth: this._client});
             const result = await drive.files.get({

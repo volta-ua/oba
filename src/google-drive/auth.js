@@ -69,4 +69,4 @@ export async function listFiles(authClient) {
     });
 }
 
-authorize().then(res=>listFiles(res)).catch(console.error);
+//authorize().then(res=>listFiles(res)).catch(console.error);
