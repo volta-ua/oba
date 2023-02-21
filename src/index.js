@@ -12,12 +12,9 @@ import {
 } from './proc/compositor.js'
 import {placeOrder} from './proc/placeOrder.js'
 import {
-    convert2DimArrayInto1Dim,
-    filterArray,
-    includesIgnoringCase,
-    makeFirstLetterCapital,
+    convert2DimArrayInto1Dim, filterArray, includesIgnoringCase, makeFirstLetterCapital,
     slice2d
-} from './service/service.js'
+} from './utils/service.js'
 import {generateOrderId} from "./proc/util.js"
 import configMode from "./config.js"
 import {updateImagesOnServer} from "./google-drive/updateImagesOnServer.js";
@@ -64,9 +61,8 @@ const MAX_POSITION_IN_ORDER = 5
 const MAX_QTY_IN_POSITION = 10
 
 const SH_IMG = 'FILES'
-const ADDR_IMG_DATA = 'A2:L'
-const IND_IMG_ART = 11
-const IND_IMG_URL = 1
+const ADDR_IMG_DATA = 'A2:B'
+const IND_IMG_ART = 0
 
 const CODE_UA = '38'
 const SIZES = [35, 36, 37, 38, 39, 40, 41]
@@ -268,8 +264,9 @@ app.post('/new-message', async (req, res) => {
                                 }
                             } else {
                                 let tuple = arrStk[actInd]
+                                let actArt = tuple[COL_STK_ARTICUL - 1]
                                 if (
-                                    tuple[COL_STK_ARTICUL - 1] !== item &&
+                                    actArt !== item &&
                                     tuple[COL_STK_MODEL_AND_COLOUR - 1] !== item
                                 ) {
                                     await extractDataFromTableOrCache(true).then(
@@ -283,15 +280,26 @@ app.post('/new-message', async (req, res) => {
                                             ? '\n' + '   ✓' + size + ':  ' + tuple[COL_STK_SISE_L - 1 + i]
                                             : ''
                                 )
-                                let msg = tuple[COL_STK_ARTICUL - 1] + '\n' +
+                                /*let msg = actArt + '\n' +
                                     tuple[COL_STK_MODEL - 1] + ' (' + tuple[COL_STK_COLOUR - 1] + ')' +
                                     (avail || '\nНет в наличии') + '\n' +
                                     'Цена ' + tuple[COL_STK_PRICE_ONE - 1] + ' / ' + tuple[COL_STK_PRICE_MANY - 1] + ' грн' + '\n' +
                                     'Сезон ' + tuple[COL_STK_SEASON - 1].toLowerCase() + '\n' +
                                     userConf[IND_USER_CONF_MSG_AVAIL] + '\n' +
-                                    getImgUrlByArt() + '\n' +
+                                    '[photo](' + configMode.app.url + '/images/' + actArt + '.jpg' + ')' + ' 777\n' +
+                                    msgGoToHome()*/
+                                let msgWhenPhotoExist = arrImg.includes(actArt)
+                                    ? '<a href="' + configMode.app.url + '/images/' + actArt + '.jpg' + '">Фото</a>' + '\n'
+                                    : ''
+                                let msg = actArt + '\n' +
+                                    tuple[COL_STK_MODEL - 1] + ' (' + tuple[COL_STK_COLOUR - 1] + ')' +
+                                    (avail || '\nНет в наличии') + '\n' +
+                                    'Цена ' + tuple[COL_STK_PRICE_ONE - 1] + ' / ' + tuple[COL_STK_PRICE_MANY - 1] + ' грн' + '\n' +
+                                    'Сезон ' + tuple[COL_STK_SEASON - 1].toLowerCase() + '\n' +
+                                    userConf[IND_USER_CONF_MSG_AVAIL] + '\n' +
+                                    msgWhenPhotoExist +
                                     msgGoToHome()
-                                await sendMessage(chatId, msg)
+                                await sendMessage(chatId, msg, {parse_mode: 'HTML'})
                             }
                         }
                     )
@@ -668,17 +676,11 @@ async function reloadStk() {
 }
 
 let arrImg = null
-let arrImgArt = null
 
 async function reloadImg() {
-    arrImg = await docImg.sheetsByTitle[SH_IMG].getCellsInRange(ADDR_IMG_DATA)
-    arrImgArt = arrImg.map(row => row[IND_IMG_ART])
+    const arrArtImg = await docImg.sheetsByTitle[SH_IMG].getCellsInRange(ADDR_IMG_DATA)
+    arrImg = arrArtImg.map(row => row[IND_IMG_ART])
     console.log('reloadImg done')
-}
-
-function getImgUrlByArt(art) {
-    let actInd = arrImgArt.indexOf(art)
-    return actInd === -1 ? '' : arrImg[actInd][IND_IMG_URL]
 }
 
 let userConf = null

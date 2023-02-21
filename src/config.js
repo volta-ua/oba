@@ -7,7 +7,8 @@ const DEV = {
     mode: 'DEV',
     is_dev: true,
     app: {
-        port: 5000
+        port: 5000,
+        url: 'www.localhost:5000'
     },
     bot: {
         bot_name: process.env.TELEGRAM_DEV,
@@ -19,7 +20,8 @@ const PROD = {
     mode: 'PROD',
     is_dev: false,
     app: {
-        port: 5000
+        port: 5000,
+        url: process.env.URL_APP
     },
     bot: {
         bot_name: process.env.TELEGRAM_PROD,
