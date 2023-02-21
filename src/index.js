@@ -280,16 +280,8 @@ app.post('/new-message', async (req, res) => {
                                             ? '\n' + '   ✓' + size + ':  ' + tuple[COL_STK_SISE_L - 1 + i]
                                             : ''
                                 )
-                                /*let msg = actArt + '\n' +
-                                    tuple[COL_STK_MODEL - 1] + ' (' + tuple[COL_STK_COLOUR - 1] + ')' +
-                                    (avail || '\nНет в наличии') + '\n' +
-                                    'Цена ' + tuple[COL_STK_PRICE_ONE - 1] + ' / ' + tuple[COL_STK_PRICE_MANY - 1] + ' грн' + '\n' +
-                                    'Сезон ' + tuple[COL_STK_SEASON - 1].toLowerCase() + '\n' +
-                                    userConf[IND_USER_CONF_MSG_AVAIL] + '\n' +
-                                    '[photo](' + configMode.app.url + '/images/' + actArt + '.jpg' + ')' + ' 777\n' +
-                                    msgGoToHome()*/
                                 let msgWhenPhotoExist = arrImg.includes(actArt)
-                                    ? '<a href="' + configMode.app.url + '/images/' + actArt + '.jpg' + '">Фото</a>' + '\n'
+                                    ? '<a href="' + configMode.app.url + '/images/' + actArt + '.jpg' + '"> ‏ </a>'
                                     : ''
                                 let msg = actArt + '\n' +
                                     tuple[COL_STK_MODEL - 1] + ' (' + tuple[COL_STK_COLOUR - 1] + ')' +
