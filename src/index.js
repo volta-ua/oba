@@ -616,7 +616,6 @@ app.post('/new-message', async (req, res) => {
 
     async function sendMessage(chatId, text, options) {
         try {
-            console.info({chat_id: chatId, text: text, ...options})
             await axios.post(TELEGRAM_URI_SEND_MESSAGE, {
                 chat_id: chatId, text: text, ...options
             })
@@ -721,5 +720,4 @@ await getDictArticuls()
 const PORT = configMode.app.port
 app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`)
-    console.log(configMode.app.url)
 })
