@@ -1,6 +1,15 @@
 import axios from 'axios'
 import express from 'express'
-import {GoogleSpreadsheet} from 'google-spreadsheet'
+import {
+    SH_DICT,
+    ADDR_DICT_CITIES, ADDR_DICT_USER_CONF, ADDR_IMG_DATA,
+    ADDR_STK_DATA,
+    COL_STK_ARTICUL, COL_STK_COLOUR, COL_STK_MODEL,
+    COL_STK_MODEL_AND_COLOUR, COL_STK_PRICE_MANY,
+    COL_STK_PRICE_ONE,
+    COL_STK_SISE_L, IND_IMG_ART, IND_USER_CONF_MSG_AVAIL, MAX_POSITION_IN_ORDER, MAX_QTY_IN_POSITION, SH_IMG,
+    SIZES, RELOAD_STK_MS, SH_STK, COL_STK_SEASON, CODE_UA
+} from './config/constants.js'
 import {
     isValidPhonePartner, isClientNameValid, isValidNPmethod, isClientPhoneValid,
     isNpWhValid, isUpIndexValid, isItemValid, isSizeValid, isQtyValid, isValidPhotoPaym,
@@ -13,13 +22,15 @@ import {
 import {placeOrder} from './proc/placeOrder.js'
 import {
     convert2DimArrayInto1Dim, filterArray, includesIgnoringCase, makeFirstLetterCapital,
-    slice2d
+    slice2d, uniqueTwoDimArr
 } from './utils/service.js'
 import {generateOrderId} from "./proc/util.js"
-import configMode from "./config.js"
+import configMode from "./config/config.js"
 import {updateImagesOnServer} from "./google-drive/updateImagesOnServer.js";
-
-console.log(JSON.stringify(configMode))
+import TblImageScanner from "./google-sheet/models/TblImageScanner.js";
+import TblBooking from "./google-sheet/models/TblBooking.js";
+import docMain from "google-spreadsheet/lib/GoogleSpreadsheet.js";
+import docImg from "google-spreadsheet/lib/GoogleSpreadsheet.js";
 
 export const CONF = {skip_validation: true}
 export const MSG_NEW_ORDER = 'СОЗДАТЬ ЗАКАЗ'
@@ -42,49 +53,11 @@ export const TELEGRAM_URI_FILE = `https://api.telegram.org/file/bot${configMode.
 export const TELEGRAM_URI_FILE_ID = `${TELEGRAM_URI}/getFile?file_id=`
 const TELEGRAM_SUPPORT = process.env.TELEGRAM_SUPPORT
 
-const SH_DICT = 'DICT'
-const ADDR_DICT_CITIES = 'P2:P'
-const ADDR_DICT_USER_CONF = 'B14:B14'
-const IND_USER_CONF_MSG_AVAIL = 0
-
-const SH_STK = 'STOCK'
-const COL_STK_MODEL_AND_COLOUR = 1
-const COL_STK_ARTICUL = 2
-const COL_STK_MODEL = 5
-const COL_STK_COLOUR = 6
-const COL_STK_SISE_L = 7
-const COL_STK_PRICE_ONE = 15
-const COL_STK_PRICE_MANY = 16
-const COL_STK_SEASON = 19
-const ADDR_STK_DATA = 'A4:S'
-const MAX_POSITION_IN_ORDER = 5
-const MAX_QTY_IN_POSITION = 10
-
-const SH_IMG = 'FILES'
-const ADDR_IMG_DATA = 'A2:B'
-const IND_IMG_ART = 0
-
-const CODE_UA = '38'
-const SIZES = [35, 36, 37, 38, 39, 40, 41]
-const RELOAD_STK_MS = 5 * 60 * 1000
-
 const app = express()
 
 app.use(express.json())
 app.use(express.urlencoded({extended: true}))
 app.use(express.static('public'))
-
-const docMain = new GoogleSpreadsheet(process.env.GOOGLE_SPREADSHEET_ID)
-await docMain.useServiceAccountAuth({
-    client_email: process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL,
-    private_key: process.env.GOOGLE_PRIVATE_KEY.replace(/\\n/g, '\n')
-})
-
-const docImg = new GoogleSpreadsheet(process.env.GOOGLE_SPREADSHEET_ID_IMG)
-await docImg.useServiceAccountAuth({
-    client_email: process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL,
-    private_key: process.env.GOOGLE_PRIVATE_KEY.replace(/\\n/g, '\n')
-})
 
 const ctx = {
     'reload_stk_last_date': new Date()
@@ -122,11 +95,11 @@ const states = {
 }
 
 function msgCancelOrder() {
-    return '\n   >>>>  Чтобы отменить и вернутся к началу нажмите ' + states.HOME
+    return '\n\n   🛑🔙  Отменить и вернутся к началу: ' + states.HOME
 }
 
 function msgGoToHome() {
-    return '\n   >>>>  Вернутся на главную страницу: ' + states.HOME
+    return '\n\n   🔙  На главную страницу: ' + states.HOME
 }
 
 app.get('/', async (req, res) => {
@@ -134,14 +107,12 @@ app.get('/', async (req, res) => {
 })
 
 app.post('/reload', async (rec, res) => {
-    await reloadAll()
-    console.log('reloaded externally')
+    await reloadUserConfByExternalRequest()
     res.json({status: 'ok'})
 })
 
 app.post('/updateImagesOnServer', async (rec, res) => {
     await updateImagesOnServer()
-    console.log('updateImagesOnServer')
     res.json({status: 'ok'})
 })
 
@@ -200,7 +171,7 @@ app.post('/new-message', async (req, res) => {
                 '✓ Поиск городов Новой Почты осуществляется на украинском языке.\n' +
                 '✓ Поиск наименований товара при проверке доступности осуществляется на русском языке. В поиске можно использовать неколько частей слов: например, "мари кож" найдет модель "мариса.евро" цвета "чер.кож".\n' +
                 '✓ Поиск артикулов товара при проверке доступности осуществляется вводом 5-ти цифр.\n' +
-                'Примечание: возможность отправки заказа в боте в состоянии разработки\n' +
+                'Примечание: возможность отправки заказа в боте в состоянии разработки' +
                 msgGoToHome()
             await sendMessage(chatId, msgHelp)
             break
@@ -211,7 +182,7 @@ app.post('/new-message', async (req, res) => {
                 '🌎Сайт: https://oba.com.ua\n' +
                 '🏆Telegram: https://t.me/artshoesua\n' +
                 '🤳Instagram: https://www.instagram.com/artshoes.ua/\n' +
-                '🔎Мониторинг посылок: ' + process.env.URL_TTN + '\n' +
+                '🔎Мониторинг посылок: ' + process.env.URL_TTN +
                 msgGoToHome()
             await sendMessage(chatId, msgAbout)
             break
@@ -222,7 +193,7 @@ app.post('/new-message', async (req, res) => {
                 await extractDataFromTableOrCache(true)
                 await sendMessage(
                     chatId,
-                    'Введите артикул (5 цифр) или название товара (модель-цвет: достаточно несколько символов, в том числе не подряд).\n' +
+                    'Введите артикул (5 цифр) или название товара (модель-цвет: достаточно несколько символов, в том числе не подряд)' +
                     msgGoToHome()
                 )
             } else {
@@ -230,18 +201,18 @@ app.post('/new-message', async (req, res) => {
                     .then(
                         async () => {
                             const MAX_ITEMS_LISTED = 50
-                            let dictItems = null
-                            let isArticul = null
+                            let dictItems
+                            let isArticul
                             if (messageText.match('^[0-9]{5}$')) {
-                                dictItems = await getDictArticuls()
+                                dictItems = await getArrFromStock(COL_STK_ARTICUL)
                                 isArticul = true
                             } else {
-                                dictItems = await getDictModelAndColour()
+                                dictItems = await getArrFromStock(COL_STK_MODEL_AND_COLOUR)
                                 isArticul = false
                             }
                             let item = messageText.toLowerCase()
                             if (!isLegalInputForRegExp(item)) {
-                                await sendMessage(chatId, 'Не допустимый ввод\n' + msgGoToHome())
+                                await sendMessage(chatId, 'Не допустимый ввод' + msgGoToHome())
                                 return
                             }
                             let actInd = includesIgnoringCase(dictItems, item)
@@ -250,13 +221,13 @@ app.post('/new-message', async (req, res) => {
                                 let sizeFound = found?.length
                                 if (!found || sizeFound === 0) {
                                     let msgNotFound = isArticul
-                                        ? 'Введеный артикул \'' + item + '\' не существует. Повторите ввод.\n'
+                                        ? 'Введеный артикул \'' + item + '\' не существует. Повторите ввод'
                                         : 'Введеный текст \'' + item +
-                                        '\' не найден в справочнике. Нужно вводить на русском языке. Повторите ввод.' + '\n'
+                                        '\' не найден в справочнике. Нужно вводить на русском языке. Повторите ввод'
                                     await sendMessage(chatId, msgNotFound + msgGoToHome())
                                 } else if (sizeFound > MAX_ITEMS_LISTED) {
                                     await sendMessage(chatId, 'Найдено слишком много вариантов. ' +
-                                        'Попробуйте уточнить поиск. Повторите ввод.\n' + msgGoToHome())
+                                        'Попробуйте уточнить поиск. Повторите ввод' + msgGoToHome())
                                 } else {
                                     await sendMessage(chatId, 'Выберите товар из списка (найдено ' +
                                         sizeFound + ')',
@@ -303,7 +274,7 @@ app.post('/new-message', async (req, res) => {
             let msgHome = '☀Рады приветствовать Вас в Telegram-боте компании производителя стильной женской обуви.\n' +
                 '❓Справочная информация: ' + states.HELP + '\n' +
                 '💁Поддержка: ' + TELEGRAM_SUPPORT + '\n' +
-                'ℹПро компанию: ' + states.ABOUT + '\n' +
+                'ℹПро компанию: ' + states.ABOUT +
                 msgGoToHome()
             await sendMessage(chatId, msgHome, composeInitButtons())
             break
@@ -327,7 +298,7 @@ app.post('/new-message', async (req, res) => {
                 await sendMessage(chatId, 'Данный телефонный номер не зарегистрирован для оформления заказа. ' +
                     'Используйте зарегистрированый номер.\n' +
                     'Для уточнения, какой номер зарегистрирован можете обратится к менеджеру ' +
-                    TELEGRAM_SUPPORT + '.' + msgCancelOrder())
+                    TELEGRAM_SUPPORT + msgCancelOrder())
             } else {
                 users[chatId].order = {}
                 users[chatId].order.phonePartner = phonePartner.substring(1)
@@ -351,7 +322,7 @@ app.post('/new-message', async (req, res) => {
                     users[chatId].order.delivType = null
                     break*/
                 default:
-                    await sendMessage(chatId, 'Тип доставки должен быть одним из перечисленных.' +
+                    await sendMessage(chatId, 'Тип доставки должен быть одним из перечисленных' +
                         msgCancelOrder(), composeTypeButtons())
             }
             users[chatId].state = states.PHOTO_PAYM
@@ -359,10 +330,10 @@ app.post('/new-message', async (req, res) => {
             break
 
         case states.PHOTO_PAYM:
-            if (!isValidPhotoPaym(photo)) {
+            if (!await isValidPhotoPaym(photo)) {
                 await sendMessage(chatId,
                     'Загрузите фотографию оплаты (нажать кнопку в виде скрепки и отправить одну фотографию)' +
-                    TELEGRAM_SUPPORT + '.' + msgCancelOrder())
+                    TELEGRAM_SUPPORT + msgCancelOrder())
             }
             switch (users[chatId].order.delivType) {
                 case DELIV_TYPE_NP:
@@ -379,14 +350,14 @@ app.post('/new-message', async (req, res) => {
                     await sendMessage(chatId, 'Артикул товара')
                     break*/
                 default:
-                    await sendMessage(chatId, 'Тип доставки должен быть одним из перечисленных.' +
+                    await sendMessage(chatId, 'Тип доставки должен быть одним из перечисленных' +
                         msgCancelOrder(), composeTypeButtons())
             }
             break
 
         case states.NP_METHOD:
             if (!isValidNPmethod(messageText)) {
-                await sendMessage(chatId, 'Метод доставки Новой Почты должен быть одним из перечисленных.' +
+                await sendMessage(chatId, 'Метод доставки Новой Почты должен быть одним из перечисленных' +
                     msgCancelOrder(), composeNPmethodButtons())
             } else {
                 users[chatId].order.npMethod = messageText
@@ -404,7 +375,7 @@ app.post('/new-message', async (req, res) => {
                 let msg = users[chatId].order.npMethod === NP_METHOD_DOOR
                     ? 'Фамилия имя отчество клиента (3 слова через пробел).'
                     : 'Фамилия имя клиента (2 слова через пробел).'
-                msg += ' только буквы кирилличные.'
+                msg += ' только буквы кирилличные'
                 await sendMessage(chatId, 'Имя ' + nameClient + ' не прошло валидацию.\n' +
                     msg + msgCancelOrder())
             } else {
@@ -417,7 +388,7 @@ app.post('/new-message', async (req, res) => {
         case states.CLIENT_PHONE:
             if (!isClientPhoneValid(messageText)) {
                 await sendMessage(chatId, 'Телефон ' + messageText + ' не прошел валидацию.\n' +
-                    'Телефон клиента в формате 067*********: 10 цифр без кода страны и пробелов.' +
+                    'Телефон клиента в формате 067*********: 10 цифр без кода страны и пробелов' +
                     msgCancelOrder())
             } else {
                 users[chatId].order.phoneClient = CODE_UA + messageText
@@ -436,7 +407,7 @@ app.post('/new-message', async (req, res) => {
             const MAX_CITIES_LISTED = 15
             let city = makeFirstLetterCapital(messageText)
             if (!isLegalInputForRegExp(city)) {
-                await sendMessage(chatId, 'Недопустимый ввод.' +
+                await sendMessage(chatId, 'Недопустимый ввод' +
                     msgCancelOrder())
                 return
             }
@@ -446,11 +417,11 @@ app.post('/new-message', async (req, res) => {
                 let sizeFound = found?.length
                 if (!found || sizeFound === 0) {
                     await sendMessage(chatId, 'Введеный текст \'' + city +
-                        '\' не найден в справочнике. Населенный пункт нужно вводить на украинском языке. Повторите ввод.' + '\n' +
+                        '\' не найден в справочнике. Населенный пункт нужно вводить на украинском языке. Повторите ввод' +
                         msgCancelOrder())
                 } else if (sizeFound > MAX_CITIES_LISTED) {
                     await sendMessage(chatId, 'Найдено слишком много вариантов. ' +
-                        'Попробуйте уточнить поиск. Повторите ввод.' + msgCancelOrder())
+                        'Попробуйте уточнить поиск. Повторите ввод' + msgCancelOrder())
                 } else {
                     await sendMessage(chatId, 'Выберите населенный пункт из списка (найдено ' +
                         sizeFound + ')',
@@ -472,7 +443,7 @@ app.post('/new-message', async (req, res) => {
         case states.NP_WH:
             if (!isNpWhValid(messageText)) {
                 await sendMessage(chatId, 'Номер отделения/почтомата не прошел валидацию.\n' +
-                    'Только число.' + msgCancelOrder())
+                    'Только число' + msgCancelOrder())
             } else {
                 users[chatId].order.npWh = messageText
                 users[chatId].state = states.ITEM
@@ -503,7 +474,7 @@ app.post('/new-message', async (req, res) => {
                 await sendMessage(chatId, 'Индекс ' + messageText +
                     ' не прошел валидацию.\n' + 'Индекс отделения Укрпошты: 5 цифр.\n' +
                     'В случае, если введеный индекс корректный, но не принимается, сообщите менеджеру ' +
-                    TELEGRAM_SUPPORT + '.\n' + msgCancelOrder())
+                    TELEGRAM_SUPPORT + msgCancelOrder())
             } else {
                 users[chatId].order.upIndex = messageText
                 users[chatId].state = states.ITEM
@@ -514,7 +485,7 @@ app.post('/new-message', async (req, res) => {
         case states.ITEM:
             if (!isItemValid(messageText)) {
                 await sendMessage(chatId, 'Артикул ' + messageText + ' не прошел валидацию.\n' +
-                    'Артикул товара (5 цифр).' + msgCancelOrder())
+                    'Артикул товара (5 цифр)' + msgCancelOrder())
             } else {
                 let pos = users[chatId].order.pos ?? 0
                 pos++
@@ -529,7 +500,7 @@ app.post('/new-message', async (req, res) => {
             let size = parseInt(messageText)
             if (!isSizeValid(size, SIZES)) {
                 await sendMessage(chatId, 'Размер ' + size + ' не прошел валидацию.\n' +
-                    'Размер (число от ' + SIZES[0] + ' до ' + SIZES[SIZES.length - 1] + ').' +
+                    'Размер (число от ' + SIZES[0] + ' до ' + SIZES[SIZES.length - 1] + ')' +
                     msgCancelOrder(), composeSizeButtons())
             } else {
                 let pos = users[chatId].order.pos
@@ -544,7 +515,7 @@ app.post('/new-message', async (req, res) => {
             if (!isQtyValid(qty, MAX_QTY_IN_POSITION)) {
                 await sendMessage(chatId,
                     'Количество ' + qty + ' не прошло валидацию.\n' +
-                    'Количество от 1 до ' + MAX_QTY_IN_POSITION + '.' + msgCancelOrder(),
+                    'Количество от 1 до ' + MAX_QTY_IN_POSITION + msgCancelOrder(),
                     composeQtyButtons(MAX_QTY_IN_POSITION))
             } else {
                 let pos = users[chatId].order.pos
@@ -580,12 +551,12 @@ app.post('/new-message', async (req, res) => {
                         'В течение 24 часов (кроме выходных и праздничных дней) ' +
                         'Вы получите ответ от менеджера или в автоматическом режиме, что заказ принят.\n' +
                         'Важно: если не будет оповещения, то обратитесь к менеджеру ' +
-                        TELEGRAM_SUPPORT + ' во избежание потери заказа!\n' + msgGoToHome())
+                        TELEGRAM_SUPPORT + ' во избежание потери заказа!' + msgGoToHome())
                     await placeOrder(docMain, users[chatId].order)
                     break
                 case MSG_CLEAR:
                     users[chatId].state = states.HOME
-                    await sendMessage(chatId, 'Заказ сброшен.\n' + msgGoToHome())
+                    await sendMessage(chatId, 'Заказ сброшен' + msgGoToHome())
                     break
                 default:
                     let pos = users[chatId].order.pos
@@ -601,7 +572,7 @@ app.post('/new-message', async (req, res) => {
 
         default:
             console.log('default for messageText ' + messageText)
-            await sendMessage(chatId, 'Ответ не определен.\n' +
+            await sendMessage(chatId, 'Ответ не определен' +
                 msgGoToHome() + '.\nСправочная ифнормация находится по ' + states.HELP +
                 '.\nПо определенным вопросам можете обратится к менеджеру ' + TELEGRAM_SUPPORT)
     }
@@ -632,84 +603,79 @@ app.post('/new-message', async (req, res) => {
 
 })
 
-async function reloadAll() {
-    await extractDataFromTableOrCache(true)
+async function reloadUserConfByExternalRequest() {
+    await wsBooking.reloadInfo()
     await reloadUserConf()
-    await reloadDocImg()
+    console.log('reloaded externally')
+}
+
+async function loadDuringStartup() {
+    await reloadStk()
+    await reloadUserConf()
     await reloadImg()
 }
 
 async function extractDataFromTableOrCache(isForce) {
     let dtNow = new Date()
     if (isForce || dtNow.getTime() - ctx.reload_stk_last_date.getTime() > RELOAD_STK_MS) {
-        await reloadDocMain()
+        await wsBooking.reloadInfo()
         await reloadStk()
         ctx.reload_stk_last_date = dtNow
     }
     console.log('extractDataFromTableOrCache done with reload_stk_last_date = ' + ctx.reload_stk_last_date)
 }
 
-async function reloadDocMain() {
-    await docMain.loadInfo()
-        .then(res => console.log('reloadDocMain done'))
-}
-
-async function reloadDocImg() {
-    await docImg.loadInfo()
-        .then(res => console.log('reloadDocImg done'))
-}
-
-let arrStk = null
-
 async function reloadStk() {
-    arrStk = await docMain.sheetsByTitle[SH_STK].getCellsInRange(ADDR_STK_DATA)
+    arrStk = await wsBooking.getDataRangeBySheet(SH_STK, ADDR_STK_DATA)
     console.log('reloadStk done')
 }
 
-let arrImg = null
+export async function reloadImg() {
+    const arrImgId = await wsImageScanner.getDataRangeBySheet(SH_IMG, ADDR_IMG_DATA)
+        .then(arr => arr.filter(
+            row => row[IND_IMG_ART] && row[IND_IMG_ART] !== '-'
+        )).then(
+            arr => uniqueTwoDimArr(arr, IND_IMG_ART)
+        )
+    arrImg = arrImgId.map(row => row[IND_IMG_ART])
+    console.log('reloadImg done with ' + arrImg.length)
+    return {arrImgId}
 
-async function reloadImg() {
-    const arrArtImg = await docImg.sheetsByTitle[SH_IMG].getCellsInRange(ADDR_IMG_DATA)
-    arrImg = arrArtImg.map(row => row[IND_IMG_ART])
-    console.log('reloadImg done')
 }
 
-let userConf = null
-
 async function reloadUserConf() {
-    const sheet = docMain.sheetsByTitle[SH_DICT]
-    userConf = await sheet.getCellsInRange(ADDR_DICT_USER_CONF)
-    userConf = convert2DimArrayInto1Dim(userConf)
+    userConf = await wsBooking.getDataRangeBySheet(SH_DICT, ADDR_DICT_USER_CONF)
+        .then(arr => convert2DimArrayInto1Dim(arr))
     console.log('reloadUserConf done ')
 }
 
 async function retrieveCities() {
-    const sheet = docMain.sheetsByTitle[SH_DICT]
-    let cities = await sheet.getCellsInRange(ADDR_DICT_CITIES)
-    cities = convert2DimArrayInto1Dim(cities)
+    let cities = await wsBooking.getDataRangeBySheet(SH_DICT, ADDR_DICT_CITIES)
+        .then(err => convert2DimArrayInto1Dim(err))
     console.log('retrieveCities done')
     return cities
 }
 
-async function getDictModelAndColour() {
-    let modelAndColours = slice2d(arrStk, 0, COL_STK_MODEL_AND_COLOUR - 1, arrStk.length, 1)
-    modelAndColours = convert2DimArrayInto1Dim(modelAndColours)
-    console.log('getDictModelAndColour done')
-    return modelAndColours
+function getArrFromStock(col) {
+    let arr = arrStk.map(row => row[col - 1])
+    console.log('getArrFromStock by ' + col)
+    return arr
 }
 
-async function getDictArticuls() {
-    let articuls = slice2d(arrStk, 0, COL_STK_ARTICUL - 1, arrStk.length, 1)
-    articuls = convert2DimArrayInto1Dim(articuls)
-    console.log('getDictArticuls done')
-    return articuls
-}
-
-await reloadAll()
-await getDictModelAndColour()
-await getDictArticuls()
+let wsBooking = null
+let wsImageScanner = null
+let arrStk = null
+let arrImg = null
+let userConf = null
 
 const PORT = configMode.app.port
-app.listen(PORT, () => {
+
+app.listen(PORT, async () => {
+    console.log(JSON.stringify(configMode))
     console.log(`Server running on port ${PORT}`)
+    //const a = await TblBooking.createInstance()
+    //const b = await TblImageScanner.createInstance()
+    wsBooking = await TblBooking.createInstance()
+    wsImageScanner = await TblImageScanner.createInstance()
+    await loadDuringStartup()
 })

@@ -1,13 +1,18 @@
-import {ImageLoader} from "./imageLoader.js";
+import {downloadFile} from "./downloadImage.js";
 import fs from "node:fs/promises";
 import path from "node:path";
 import GSheetConnector from "../google-sheet/GSheetConnector.js";
 import GSheetTableDefinition from "../google-sheet/GSheetTableDefinition.js";
 import {convert2DimArrayInto1Dim, slice2d, uniqueTwoDimArr} from "../utils/service.js";
+import {authorize} from "./auth.js";
+import TblImageScanner from "../google-sheet/models/TblImageScanner.js";
+import {ADDR_IMG_DATA, SH_IMG} from "../config/constants.js";
+import {reloadImg} from "../index.js";
 
 // think about refactoring
 const IND_IMG_ART = 0
 const IND_IMG_ID = 1
+
 //
 
 async function clearImagesFolder() {
@@ -19,34 +24,26 @@ async function clearImagesFolder() {
 }
 
 export async function updateImagesOnServer() {
-    await clearImagesFolder()
-    const images = await scanImagesOnDataSource()
-    const imageLoader = new ImageLoader()
-    await imageLoader.init()
-    for (const img of images) {
-        await imageLoader.downloadFile(img[IND_IMG_ID], img[IND_IMG_ART]);
+    //await clearImagesFolder()
+    const {arrImgId} = await reloadImg()
+    const auth = await authorize()
+    for (const img of arrImgId) {
+        await downloadFile(
+            auth,
+            img[IND_IMG_ID],
+            'public/images/' + img[IND_IMG_ART] + '.jpg'
+        )
     }
+    console.log('updateImagesOnServer')
 }
 
 async function scanImagesOnDataSource() {
-    const tblDef = new GSheetTableDefinition(
-        process.env.GOOGLE_SPREADSHEET_ID_IMG, 'FILES',
-        1, 1, ['Articul', 'ID'], 1)
-    const gs = new GSheetConnector(tblDef);
-    await gs.create();
-    const layout = tblDef.layout
-    let arrData = await gs.getData()
+    const wsImageScanner = await TblImageScanner.createInstance()
+    let arrData = await wsImageScanner.getDataRangeBySheet(SH_IMG, ADDR_IMG_DATA)
     arrData = arrData.filter(
-        el => el[layout.Articul] && el[layout.Articul] !== '-'
+        el => el[IND_IMG_ART] && el[IND_IMG_ART] !== '-'
     )
-    arrData = uniqueTwoDimArr(arrData, layout.Articul)
-    console.log(arrData)
+    arrData = uniqueTwoDimArr(arrData, IND_IMG_ART)
+    console.log('scanImagesOnDataSource with ' + arrData.length)
     return arrData
-}
-
-export async function getArticulesWithPhoto() {
-    const arrData = await scanImagesOnDataSource()
-    return convert2DimArrayInto1Dim(
-        slice2d(arrData, 0, IND_IMG_ART, arrData.length, 1)
-    )
 }

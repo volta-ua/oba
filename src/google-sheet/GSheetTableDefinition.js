@@ -1,62 +1,53 @@
 import {numberToLetter} from "../utils/service.js";
 
+/**
+ *     [
+ *      {
+ *          shName,
+ *          ranges: [
+ *              {
+ *                  colL,
+ *                  rowHeader,
+ *                  numRows,
+ *                  numCols,
+ *                  indKey,
+ *                  arrColNames
+ *              }
+ *          ]
+ *      }
+ *     ]
+ */
+
+
 export default class GSheetTableDefinition {
     _id;
-    _shName;
-    _colL;
-    _indKeyCol;
-    _arrColNames;
-    _rowHeader;
-    _layout;
+    _scheme;
 
-    constructor(id, shName, colL, indKeyCol, arrColNames, rowHeader) {
+    constructor(id, scheme) {//shName, colL, indKeyCol, arrColNames, rowHeader) {
         this._id = id;
-        this._shName = shName;
-        this._colL = colL;
-        this._indKeyCol = indKeyCol;
-        this._arrColNames = arrColNames;
-        this._rowHeader = rowHeader;
-        this._layout = this._composeLayout(arrColNames)
+        if (!Array.isArray(scheme)) throw new Error('Invalid schema')
+        this._scheme = scheme;
     }
 
-    _composeLayout(arrColNames) {
+    /*_composeLayout(arrColNames) {
         const layout = {}
         arrColNames.forEach(
             (el, i) => layout[el] = i
         )
         return layout
-    }
+    }*/
 
-    getRangeInA1Notation() {
+    /*getA1AddressOfDataSource() {
         return numberToLetter(this._colL) + (this._rowHeader + 1) +
             ':' + numberToLetter(this._colL + this._arrColNames.length - 1);
-    }
+    }*/
 
     get id() {
         return this._id;
     }
 
-    get shName() {
-        return this._shName;
+    get scheme() {
+        return this._scheme;
     }
 
-    get colL() {
-        return this._colL;
-    }
-
-    get indKeyCol() {
-        return this._indKeyCol;
-    }
-
-    get arrColNames() {
-        return this._arrColNames;
-    }
-
-    get rowHeader() {
-        return this._rowHeader;
-    }
-
-    get layout() {
-        return this._layout;
-    }
 }
