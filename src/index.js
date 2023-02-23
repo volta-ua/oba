@@ -259,7 +259,7 @@ app.post('/new-message', async (req, res) => {
                                     (avail || '\nНет в наличии') + '\n' +
                                     'Цена ' + tuple[COL_STK_PRICE_ONE - 1] + ' / ' + tuple[COL_STK_PRICE_MANY - 1] + ' грн' + '\n' +
                                     'Сезон ' + tuple[COL_STK_SEASON - 1].toLowerCase() + '\n' +
-                                    userConf[IND_USER_CONF_MSG_AVAIL] + '\n' +
+                                    userConf[IND_USER_CONF_MSG_AVAIL] +
                                     msgWhenPhotoExist +
                                     msgGoToHome()
                                 await sendMessage(chatId, msg, {parse_mode: 'HTML'})
