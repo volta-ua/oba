@@ -95,11 +95,11 @@ const states = {
 }
 
 function msgCancelOrder() {
-    return '\n\n   🛑🔙  Отменить и вернутся к началу: ' + states.HOME
+    return '\n\n🛑🔙  Отменить и вернутся к началу: ' + states.HOME
 }
 
 function msgGoToHome() {
-    return '\n\n   🔙  На главную страницу: ' + states.HOME
+    return '\n\n🔙  На главную страницу: ' + states.HOME
 }
 
 app.get('/', async (req, res) => {
