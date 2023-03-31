@@ -1,4 +1,4 @@
-export function numberToLetter(numb) {
+export function numberToLetter(numb: number) {
     let temp, letter = ''
     while (numb > 0) {
         temp = (numb - 1) % 26
@@ -8,7 +8,7 @@ export function numberToLetter(numb) {
     return letter
 }
 
-export function uniqueTwoDimArr(arr, ind = 0) {
+export function uniqueTwoDimArr(arr: any[], ind = 0) {
     const arrKeys = arr.map(el => el[ind])
     arr = arr.filter(
         (el, i) => arrKeys.indexOf(el[ind]) === i
@@ -16,11 +16,11 @@ export function uniqueTwoDimArr(arr, ind = 0) {
     return arr
 }
 
-export function convert2DimArrayInto1Dim(arr2d) {
+export function convert2DimArrayInto1Dim(arr2d: any[][]) {
     return [].concat.apply([], arr2d)
 }
 
-export function includesIgnoringCase(arr, searchVal) {
+export function includesIgnoringCase(arr: string[], searchVal: string) {
     searchVal = searchVal.toLowerCase()
     for (let i = 0; i < arr.length; i++) {
         if (arr[i].toLowerCase() === searchVal) {
@@ -30,10 +30,10 @@ export function includesIgnoringCase(arr, searchVal) {
     return false
 }
 
-export function filterArray(arr, searchVal, isContainsWithMatchParts) {
+export function filterArray(arr: string[], searchVal: string, isContainsWithMatchParts: boolean = false) {
     searchVal = searchVal.toLowerCase()
     if (isContainsWithMatchParts) {
-        searchVal = '^.*' + searchVal.replaceAll(' ', '.*') + '.*$'
+        searchVal = '^.*' + searchVal.replace(new RegExp(' ', 'g'), '.*') + '.*$'
         return arr.filter(
             el => el.toLowerCase().match(searchVal)
         )
@@ -44,23 +44,21 @@ export function filterArray(arr, searchVal, isContainsWithMatchParts) {
     }
 }
 
-export function lpad(val, width, z) {
-    z = z || '0'
-    width = width || 2
+export function lpad(val: string | number, width: number = 2, z: string = '0') {
     val = val + ''
     return val.length >= width
         ? val :
         new Array(width - val.length + 1).join(z) + val
 }
 
-export function makeFirstLetterCapital(phrase) {
+export function makeFirstLetterCapital(phrase: string) {
     phrase = phrase.toLowerCase()
     let res = ''
     let prev = null
     for (let a = 0; a < phrase.length; a++) {
         let smb = phrase.substring(a, a + 1)
         if (!prev || prev.match('\W')) {
-            let temp = prev?.match('[:alpha:]')
+            //let temp = prev?.match('[:alpha:]')
             smb = smb.toUpperCase()
         }
         res += smb
@@ -69,7 +67,7 @@ export function makeFirstLetterCapital(phrase) {
     return res
 }
 
-export function slice2d(array, rowIndex, colIndex, numRows, numCols) {
+export function slice2d(array: any[][], rowIndex: number, colIndex: number, numRows: number, numCols: number) {
     let result = []
     for (let i = rowIndex; i < (rowIndex + numRows); i++) {
         result.push(

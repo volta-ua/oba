@@ -1,14 +1,14 @@
-import GSheetConnector from "../GSheetConnector.js";
-import GSheetTableDefinition from "../GSheetTableDefinition.js";
-import {SH_DICT, SH_STK} from "../../config/constants.js";
+import GSheetConnector from "../GSheetConnector"
+import GSheetTableDefinition from "../GSheetTableDefinition"
+import {SH_DICT, SH_STK} from "../../config/constants"
 
-class TblBooking extends GSheetConnector{
-    static _instance;
+class TblBooking extends GSheetConnector {
+    static _instance: TblBooking;
 
     constructor() {
         super(
             new GSheetTableDefinition(
-                process.env.GOOGLE_SPREADSHEET_ID,
+                process.env.GOOGLE_SPREADSHEET_ID ?? '',
                 [
                     {
                         shName: SH_DICT,

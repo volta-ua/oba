@@ -1,8 +1,7 @@
 import {
-    DELIV_TYPE_NP, DELIV_TYPE_NP_POD, DELIV_TYPE_UP, DELIV_TYPE_OTHER,
-    NP_METHOD_WH, NP_METHOD_POST, NP_METHOD_DOOR,
-    MSG_CLEAR, MSG_SEND, MSG_ADD_POSITION, MSG_NEW_ORDER, MSG_AVAIL, MSG_AUTH
-} from '../index.js'
+    DELIV_TYPE_NP, DELIV_TYPE_NP_POD, DELIV_TYPE_UP, NP_METHOD_WH, NP_METHOD_POST,
+    NP_METHOD_DOOR, MSG_CLEAR, MSG_SEND, MSG_ADD_POSITION, MSG_AVAIL, MSG_AUTH
+} from '../config/constants'
 
 export function composeInitButtons() {
     return {
@@ -10,7 +9,7 @@ export function composeInitButtons() {
         'reply_markup': {
             'one_time_keyboard': true,
             'keyboard': [
-                 [MSG_AVAIL]
+                [MSG_AVAIL]
             ]
         }
     }
@@ -46,7 +45,7 @@ export function composeTypeButtons() {
     }
 }
 
-export function composeNPmethodButtons() {
+export function composeButtonsMethodNP() {
     return {
         'parse_mode': 'Markdown',
         'reply_markup': {
@@ -75,7 +74,7 @@ export function composeSizeButtons() {
     }
 }
 
-export function composeQtyButtons(qtyMax) {
+export function composeQtyButtons(qtyMax: number) {
     return {
         'parse_mode': 'Markdown',
         'reply_markup': {
@@ -87,7 +86,7 @@ export function composeQtyButtons(qtyMax) {
     }
 }
 
-export function composeButtonsFromArray(arr) {
+export function composeButtonsFromArray(arr: string[]) {
     return {
         'parse_mode': 'Markdown',
         'reply_markup': {
@@ -99,7 +98,7 @@ export function composeButtonsFromArray(arr) {
     }
 }
 
-export function composOrderConfirmButtons(isNext) {
+export function composOrderConfirmButtons(isNext: boolean = false) {
     let buttons = isNext ? [[{text: MSG_ADD_POSITION}]] : []
     buttons.push([{text: MSG_SEND}])
     buttons.push([{text: MSG_CLEAR}])

@@ -1,7 +1,6 @@
 import fs from 'fs/promises'
 import path from 'path'
 import process from 'process';
-import {authenticate} from '@google-cloud/local-auth'
 import {google} from 'googleapis'
 
 const SCOPES = [
@@ -16,16 +15,16 @@ const CREDENTIALS_PATH = path.join(process.cwd(), 'credentialsGD.json');
 async function loadSavedCredentialsIfExist() {
     try {
         const content = await fs.readFile(TOKEN_PATH);
-        const credentials = JSON.parse(content);
+        const credentials = JSON.parse(content.toString());//added toString()
         return google.auth.fromJSON(credentials);
     } catch (err) {
         return null;
     }
 }
 
-async function saveCredentials(client) {
+async function saveCredentials(client: any) {
     const content = await fs.readFile(CREDENTIALS_PATH);
-    const keys = JSON.parse(content);
+    const keys = JSON.parse(content.toString());
     const key = keys.installed || keys.web;
     const payload = JSON.stringify({
         type: 'authorized_user',
@@ -41,30 +40,31 @@ export async function authorize() {
     if (client) {
         return client;
     }
+    // @ts-ignore
     client = await authenticate({
         scopes: SCOPES,
         keyfilePath: CREDENTIALS_PATH,
     });
-    if (client.credentials) {
+    if (client?.credentials) {
         await saveCredentials(client);
     }
     return client;
 }
 
-export async function listFiles(authClient) {
+export async function listFiles(authClient: any) {
     const drive = google.drive({version: 'v3', auth: authClient});
     const res = await drive.files.list({
         pageSize: 10,
         fields: 'nextPageToken, files(id, name)',
     });
     const files = res.data.files;
-    if (files.length === 0) {
+    if (files?.length === 0) {
         console.log('No files found.');
         return;
     }
 
     console.log('Files:');
-    files.map((file) => {
+    files?.map((file) => {
         console.log(`${file.name} (${file.id})`);
     });
 }

@@ -1,25 +1,25 @@
-import GSheetConnector from "../GSheetConnector.js";
-import GSheetTableDefinition from "../GSheetTableDefinition.js";
+import GSheetConnector from "../GSheetConnector";
+import GSheetTableDefinition from "../GSheetTableDefinition";
 
-class TblImageScanner extends GSheetConnector{
-    static _instance;
+class TblBotManager extends GSheetConnector {
+    static _instance: TblBotManager;
 
     constructor() {
         super(
             new GSheetTableDefinition(
-                process.env.GOOGLE_SPREADSHEET_ID_IMG,
+                process.env.GOOGLE_SPREADSHEET_ID_BOT ?? '',
                 [
                     {
-                        shName: 'FILES',
+                        shName: 'USERS',
                         ranges:
                             [
                                 {
-                                    colL: 1,
+                                    colL: 2,
                                     rowHeader: 1,
                                     numRows: null,
                                     numCols: 2,
                                     indKey: 1,
-                                    arrColNames: ['Articul', 'ID']
+                                    arrColNames: ['Chat ID', 'Username']
                                 }
                             ]
                     }
@@ -33,12 +33,12 @@ class TblImageScanner extends GSheetConnector{
             console.log('TblImageScanner already existed')
             return this._instance
         }
-        console.log('TblImageScanner is creating')
-        const gsConn = new TblImageScanner()
+        console.log('TblBotManager is creating')
+        const gsConn = new TblBotManager()
         this._instance = await gsConn.create()
         return this._instance
     }
 
 }
 
-export default TblImageScanner
+export default TblBotManager

@@ -1,11 +1,12 @@
 import {GoogleSpreadsheet} from 'google-spreadsheet'
+import GSheetTableDefinition from "./GSheetTableDefinition";
 
 export default class GSheetConnector {
-    _ws;
-    _tableDef;
-    _doc;
+    _ws: any;
+    _tableDef: GSheetTableDefinition;
+    _doc: GoogleSpreadsheet;
 
-    constructor(tableDef) {
+    constructor(tableDef: GSheetTableDefinition) {
         this._tableDef = tableDef
     }
 
@@ -29,12 +30,14 @@ export default class GSheetConnector {
                 writable: false
             })
             shDef.ranges.forEach(
-                rng => this._ws[shName]['ranges'].push(
-                    rng
-                )
+                (rng: any) =>
+                    this._ws[shName]['ranges'].push(
+                        rng
+                    )
             )
         }
-        console.log('created: ' + this._toString())
+        //console.log('created: ' + this._toString())
+        console.log('created: ' + this)
         return this
     }
 
@@ -43,20 +46,19 @@ export default class GSheetConnector {
             .then(() => console.log('reloadInfo: ' + this._tableDef.id))
     }
 
-    async getDataRangeBySheet(shName, addr) {
+    async getDataRangeBySheet(shName: string, addr: string) {
         const sh = this._ws[shName]
-        const arr = await sh.getCellsInRange(addr)
-        return arr
+        return await sh.getCellsInRange(addr)
     }
 
-    _toString() {
+    /*_toString() {
         let msg = ''
         for (const [key, value] of Object.entries(this._ws)) {
             let delim = msg ? ', ' : ''
-            msg += delim + key + ': ' + JSON.stringify(value.ranges)
+            msg += delim + key + ': ' + JSON.stringify(value)
         }
         return msg
-    }
+    }*/
 
     get tableDef() {
         return this._tableDef;

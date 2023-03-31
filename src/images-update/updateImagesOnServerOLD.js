@@ -1,11 +1,11 @@
-import {downloadFile} from "../google-drive/downloadImage.js";
+import {downloadFile} from "../google-drive/downloadImage.ts";
 import fs from "node:fs/promises";
 import path from "node:path";
-import {uniqueTwoDimArr} from "../utils/service.js";
-import {authorize} from "../google-drive/auth.js";
+import {uniqueTwoDimArr} from "../utils/service.ts";
+import {authorize} from "../google-drive/auth.ts";
 import TblImageScanner from "../google-sheet/models/TblImageScanner.js";
-import {ADDR_IMG_DATA, SH_IMG} from "../config/constants.js";
-import {reloadImg} from "../index.js";
+import {ADDR_IMG_DATA, SH_IMG} from "../config/constants.ts";
+import {reloadImg} from "../index.ts";
 
 // think about refactoring
 const IND_IMG_ART = 0

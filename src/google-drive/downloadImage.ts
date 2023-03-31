@@ -1,3 +1,4 @@
+/*
 import {google} from "googleapis";
 import fs from 'fs'
 
@@ -20,3 +21,4 @@ export async function downloadFile(auth, fileId, newName) {
     }
     console.log('downloadFile ' + newName)
 }
+*/

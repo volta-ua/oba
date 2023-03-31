@@ -1,4 +1,5 @@
-import logger from "../utils/logger.ts";
+/*
+import logger from "../utils/logger.ts"
 
 const getAllFoldersInclSubfolders = (folderId, subpath) => {
     subpath = subpath ?? ''
@@ -45,3 +46,4 @@ const getAllFoldersInFolder = (folderId, subpath) => {
     return arr
 
 }
+*/

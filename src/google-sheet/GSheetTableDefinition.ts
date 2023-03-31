@@ -1,5 +1,3 @@
-import {numberToLetter} from "../utils/service.js";
-
 /**
  *     [
  *      {
@@ -23,7 +21,7 @@ export default class GSheetTableDefinition {
     _id;
     _scheme;
 
-    constructor(id, scheme) {//shName, colL, indKeyCol, arrColNames, rowHeader) {
+    constructor(id: string, scheme: any[]) {//shName, colL, indKeyCol, arrColNames, rowHeader) {
         this._id = id;
         if (!Array.isArray(scheme)) throw new Error('Invalid schema')
         this._scheme = scheme;

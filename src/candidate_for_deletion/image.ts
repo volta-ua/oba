@@ -1,3 +1,4 @@
+/*
 import fs from 'fs'
 import {google} from 'googleapis'
 
@@ -38,9 +39,10 @@ function uploadFile(auth) {
     })
 }
 
-export function writeImage(content) {
+export function writeImage(content: any) {
     fs.readFile('credentials.json', (err, content) => {
         if (err) return console.log('Error loading client secret file:', err)
-        authorize(JSON.parse(content), uploadFile)
+        authorize(JSON.parse(content.toString()), uploadFile)
     })
 }
+*/
