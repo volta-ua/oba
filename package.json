@@ -2,10 +2,17 @@
   "name": "oba",
   "version": "1.0.0",
   "description": "",
-  "main": "src/index.js",
+  "main": "index.js",
+  "type": "commonjs",
   "keywords": [],
   "author": "",
   "license": "ISC",
+  "scripts": {
+    "watch": "tsc --w",
+    "build": "rimraf ./dist && npx tsc",
+    "dev": "tsc --w && nodemon dist/index.js",
+    "prod": "cross-env NODE_ENV=PROD node dist/index.js"
+  },
   "dependencies": {
     "@google-cloud/local-auth": "^2.1.0",
     "axios": "^0.27.2",
@@ -14,15 +21,12 @@
     "fs-extra": "^10.1.0",
     "google-spreadsheet": "^3.3.0",
     "googleapis": "^105.0.0",
+    "node-color-log": "^10.0.2",
     "process": "^0.11.10",
     "redis": "^4.3.0"
   },
-  "type": "module",
-  "scripts": {
-    "prod": "NODE_ENV=PROD node src/index.js",
-    "dev": "nodemon src/index.js"
-  },
   "devDependencies": {
+    "@types/node": "^18.15.11",
     "nodemon": "^2.0.19"
   }
 }

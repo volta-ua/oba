@@ -23,3 +23,5 @@ export const IND_IMG_ART = 0
 export const CODE_UA = '38'
 export const SIZES = [35, 36, 37, 38, 39, 40, 41]
 export const RELOAD_STK_MS = 5 * 60 * 1000
+
+export const GD_FOLDER_IMAGES = 'https://drive.google.com/drive/folders/14aDt6fZJFYrDUZVi_QV9nq5S5qilumKR?usp=sharing'

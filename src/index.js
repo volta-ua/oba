@@ -25,8 +25,8 @@ import {
     slice2d, uniqueTwoDimArr
 } from './utils/service.js'
 import {generateOrderId} from "./candidate_for_deletion/util.js"
-import configMode from "./config/config.js"
-import {updateImagesOnServer} from "./images-update/updateImagesOnServer.js";
+import configMode from "./config/config.ts"
+import {updateImagesOnServerOLD} from "./images-update/updateImagesOnServerOLD.js";
 import TblImageScanner from "./google-sheet/models/TblImageScanner.js";
 import TblBooking from "./google-sheet/models/TblBooking.js";
 import docMain from "google-spreadsheet/lib/GoogleSpreadsheet.js";
@@ -113,7 +113,7 @@ app.post('/reload', async (rec, res) => {
 })
 
 app.post('/updateImagesOnServer', async (rec, res) => {
-    await updateImagesOnServer()
+    await updateImagesOnServerOLD()
     res.json({status: 'ok'})
 })
 
