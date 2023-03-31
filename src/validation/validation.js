@@ -3,7 +3,7 @@ import {
     NP_METHOD_DOOR, NP_METHOD_POST, NP_METHOD_WH,
     TELEGRAM_URI_FILE_ID, TELEGRAM_URI_FILE
 } from "../index.js";
-import {writeImage} from "../proc/image.js";
+import {writeImage} from "../candidate_for_deletion/image.js";
 
 export function isValidPhonePartner(phonePartner) {
     return phonePartner.match('^\\+380[0-9]{9}$') || CONF.skip_validation

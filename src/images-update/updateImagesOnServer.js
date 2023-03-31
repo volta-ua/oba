@@ -1,10 +1,8 @@
-import {downloadFile} from "./downloadImage.js";
+import {downloadFile} from "../google-drive/downloadImage.js";
 import fs from "node:fs/promises";
 import path from "node:path";
-import GSheetConnector from "../google-sheet/GSheetConnector.js";
-import GSheetTableDefinition from "../google-sheet/GSheetTableDefinition.js";
-import {convert2DimArrayInto1Dim, slice2d, uniqueTwoDimArr} from "../utils/service.js";
-import {authorize} from "./auth.js";
+import {uniqueTwoDimArr} from "../utils/service.js";
+import {authorize} from "../google-drive/auth.js";
 import TblImageScanner from "../google-sheet/models/TblImageScanner.js";
 import {ADDR_IMG_DATA, SH_IMG} from "../config/constants.js";
 import {reloadImg} from "../index.js";
@@ -12,7 +10,6 @@ import {reloadImg} from "../index.js";
 // think about refactoring
 const IND_IMG_ART = 0
 const IND_IMG_ID = 1
-
 //
 
 async function clearImagesFolder() {

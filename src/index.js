@@ -7,7 +7,7 @@ import {
     COL_STK_ARTICUL, COL_STK_COLOUR, COL_STK_MODEL,
     COL_STK_MODEL_AND_COLOUR, COL_STK_PRICE_MANY,
     COL_STK_PRICE_ONE,
-    COL_STK_SISE_L, IND_IMG_ART, IND_USER_CONF_MSG_AVAIL, MAX_POSITION_IN_ORDER, MAX_QTY_IN_POSITION, SH_IMG,
+    COL_STK_SIZE_L, IND_IMG_ART, IND_USER_CONF_MSG_AVAIL, MAX_POSITION_IN_ORDER, MAX_QTY_IN_POSITION, SH_IMG,
     SIZES, RELOAD_STK_MS, SH_STK, COL_STK_SEASON, CODE_UA
 } from './config/constants.js'
 import {
@@ -18,19 +18,20 @@ import {
 import {
     composeAuthButtons, composeInitButtons, composeButtonsFromArray, composeNPmethodButtons,
     composeQtyButtons, composeSizeButtons, composeTypeButtons, composOrderConfirmButtons
-} from './proc/compositor.js'
-import {placeOrder} from './proc/placeOrder.js'
+} from './candidate_for_deletion/compositor.js'
+import {placeOrder} from './candidate_for_deletion/placeOrder.js'
 import {
     convert2DimArrayInto1Dim, filterArray, includesIgnoringCase, makeFirstLetterCapital,
     slice2d, uniqueTwoDimArr
 } from './utils/service.js'
-import {generateOrderId} from "./proc/util.js"
+import {generateOrderId} from "./candidate_for_deletion/util.js"
 import configMode from "./config/config.js"
-import {updateImagesOnServer} from "./google-drive/updateImagesOnServer.js";
+import {updateImagesOnServer} from "./images-update/updateImagesOnServer.js";
 import TblImageScanner from "./google-sheet/models/TblImageScanner.js";
 import TblBooking from "./google-sheet/models/TblBooking.js";
 import docMain from "google-spreadsheet/lib/GoogleSpreadsheet.js";
 import docImg from "google-spreadsheet/lib/GoogleSpreadsheet.js";
+import TblBotManager from "./google-sheet/models/TblBotManager.js";
 
 export const CONF = {skip_validation: true}
 export const MSG_NEW_ORDER = 'СОЗДАТЬ ЗАКАЗ'
@@ -247,8 +248,8 @@ app.post('/new-message', async (req, res) => {
                                 let avail = ''
                                 SIZES.forEach(
                                     (size, i) =>
-                                        avail += tuple[COL_STK_SISE_L - 1 + i] > 0
-                                            ? '\n' + '   ✓' + size + ':  ' + tuple[COL_STK_SISE_L - 1 + i]
+                                        avail += tuple[COL_STK_SIZE_L - 1 + i] > 0
+                                            ? '\n' + '   ✓' + size + ':  ' + tuple[COL_STK_SIZE_L - 1 + i]
                                             : ''
                                 )
                                 let msgWhenPhotoExist = arrImg.includes(actArt)
@@ -664,6 +665,7 @@ function getArrFromStock(col) {
 
 let wsBooking = null
 let wsImageScanner = null
+let wsBotManager = null
 let arrStk = null
 let arrImg = null
 let userConf = null
@@ -673,9 +675,9 @@ const PORT = configMode.app.port
 app.listen(PORT, async () => {
     console.log(JSON.stringify(configMode))
     console.log(`Server running on port ${PORT}`)
-    //const a = await TblBooking.createInstance()
-    //const b = await TblImageScanner.createInstance()
     wsBooking = await TblBooking.createInstance()
     wsImageScanner = await TblImageScanner.createInstance()
+    wsBotManager = await TblBotManager.createInstance()
     await loadDuringStartup()
+    console.log(1)
 })
