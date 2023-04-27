@@ -37,13 +37,13 @@ export default class GSheetConnector {
             )
         }
         //console.log('created: ' + this._toString())
-        console.log('created: ' + this)
+        console.log('created: ' + JSON.stringify(this._tableDef))
         return this
     }
 
     async reloadInfo() {
         await this._doc.loadInfo()
-            .then(() => console.log('reloadInfo: ' + this._tableDef.id))
+        console.log('reloadInfo: ' + this._tableDef.id)
     }
 
     async getDataRangeBySheet(shName: string, addr: string) {
