@@ -32,14 +32,22 @@ import Order from "../model/Order";
 import Item from "../model/Item";
 import {users} from "../model/Users";
 import express from "express";
-import {arrStk, extractDataFromTableOrCache, getArrFromStock, images, reloadArrCities, userConf} from "./extractors";
+import {
+    arrStk,
+    extractDataFromTableOrCache,
+    getArrFromStock,
+    images,
+    reloadArrCities,
+    userConf,
+    usersRepo
+} from "./extractors";
 import {
     composeAuthButtons,
     composeButtonsFromArray, composeButtonsMethodNP,
     composeInitButtons,
     composeQtyButtons, composeSizeButtons, composeTypeButtons,
     composOrderConfirmButtons
-} from "./composeButtons";
+} from "./composeButtons"
 
 export const messageHandler = async (req: express.Request, res: express.Response): Promise<express.Response | undefined> => {
     const message = req.body?.message ?? req.body?.edited_message
@@ -79,6 +87,18 @@ export const messageHandler = async (req: express.Request, res: express.Response
     logger.log(user.state, messageText)
 
     switch (user.state) {
+        case states.HOME:
+            user.state = states.HOME
+            const user = usersRepo.findOneBy({chat_id: chatId})
+            const isUserKnown = !!user
+            let msgHome = '☀Рады приветствовать Вас в Telegram-боте компании производителя стильной женской обуви.\n' +
+                '❓Справочная информация: ' + states.HELP + '\n' +
+                '💁Поддержка: ' + TELEGRAM_SUPPORT + '\n' +
+                'ℹПро компанию: ' + states.ABOUT +
+                msgGoToHome
+            await sendMessage(chatId, msgHome, composeInitButtons())
+            break
+
         case states.HELP :
             user.state = states.HELP
             await sendMessage(chatId, MSG_HELP)
@@ -92,7 +112,7 @@ export const messageHandler = async (req: express.Request, res: express.Response
         case states.AVAIL:
             user.state = states.AVAIL
             if (messageText === MSG_AVAIL) {
-                await extractDataFromTableOrCache(true)
+                await extractDataFromTableOrCache()// TODO was await extractDataFromTableOrCache(true), but probably obsolete
                 await sendMessage(
                     chatId,
                     'Введите артикул (5 цифр) или название товара (модель-цвет: достаточно несколько символов, в том числе не подряд)' +
@@ -165,16 +185,6 @@ export const messageHandler = async (req: express.Request, res: express.Response
                     await sendMessage(chatId, msg, {parse_mode: 'HTML'})
                 }
             }
-            break
-
-        case states.HOME:
-            user.state = states.HOME
-            let msgHome = '☀Рады приветствовать Вас в Telegram-боте компании производителя стильной женской обуви.\n' +
-                '❓Справочная информация: ' + states.HELP + '\n' +
-                '💁Поддержка: ' + TELEGRAM_SUPPORT + '\n' +
-                'ℹПро компанию: ' + states.ABOUT +
-                msgGoToHome
-            await sendMessage(chatId, msgHome, composeInitButtons())
             break
 
         case states.NEW:

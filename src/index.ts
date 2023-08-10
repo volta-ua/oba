@@ -1,12 +1,12 @@
 import express from 'express'
-
 import configMode from './config/config'
 import {sendMessage} from './bot/bot'
 import logger from './utils/logger'
-import {updateImagesOnServer} from './images-update/updateImagesOnServer'
-import {articulesWoImages} from './images-update/articulesWoImages'
-import {messageHandler} from "./domain/messageHandler";
-import {loadDuringStartup, reloadUserConfByExternalRequest} from "./domain/extractors";
+import {updateImagesOnServer} from './domain/images-update/updateImagesOnServer'
+import {articulesWoImages} from './domain/images-update/articulesWoImages'
+import {messageHandler} from './domain/messageHandler'
+import {loadDuringStartup, reloadUserConfByExternalRequest} from './domain/extractors'
+import {appDataSource} from './db/appDataSource'
 
 const app = express()
 
@@ -35,8 +35,7 @@ app.get('/articulesWoImages', async (_rec, res) => {
 
 app.post('/new-message', async (req: express.Request, res: express.Response): Promise<void> => {
     await messageHandler(req, res)
-    //res.send('Done')// TODO probably is not reachable
-    //return undefined
+    res.send('Done')
 })
 
 const PORT = configMode.app.port
@@ -45,6 +44,11 @@ app.listen(PORT, async () => {
     logger.log(JSON.stringify(configMode))
     logger.log(`Server running on port ${PORT}`)
     await loadDuringStartup()
+    appDataSource.initialize()
+        .then(ds => {
+            logger.info('DB is connected: ' + JSON.stringify(ds.options.logging))
+        })
+        .catch((err) => logger.error(err))
     /*await sendMessage(configMode.bot.TELEGRAM_CHANNEL_EVENTS ?? '',
         'server restarted')*/
     //throw new Error('777')

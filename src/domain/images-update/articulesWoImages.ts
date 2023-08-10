@@ -1,6 +1,6 @@
 import path from "path"
-import {COL_STK_ARTICUL} from "../config/constants"
-import {reloadArrStk} from "../domain/extractors"
+import {COL_STK_ARTICUL} from "../../config/constants"
+import {reloadArrStk} from "../extractors"
 
 export const articulesWoImages = async (): Promise<string[]> => {
     const fld = path.join('public', 'images')

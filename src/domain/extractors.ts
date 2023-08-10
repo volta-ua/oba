@@ -12,6 +12,8 @@ import fs from "fs"
 import {convert2DimArrayInto1Dim} from "../utils/service"
 import TblBooking from "../google-sheet/models/TblBooking"
 import {appCtx} from "./ApplicationContext";
+import {appDataSource} from "../db/appDataSource";
+import {User} from "../entity/User";
 
 let wsBooking: TblBooking
 export let arrStk: any[][]
@@ -34,12 +36,16 @@ export const loadDuringStartup = async () => {
 
 export const extractDataFromTableOrCache = async (isForce: boolean = false) => {
     let dtNow = new Date()
+    let msgOper = null
     if (isForce || dtNow.getTime() - appCtx.reload_stk_last_date.getTime() > RELOAD_STK_MS) {
         await wsBooking.reloadInfo()
         await reloadArrStk()
         appCtx.reload_stk_last_date = dtNow
+        msgOper = 'reloaded'
+    } else {
+        msgOper = 'cached'
     }
-    logger.log('extractDataFromTableOrCache done with reload_stk_last_date = ' + appCtx.reload_stk_last_date)
+    logger.log('extractDataFromTableOrCache ' + msgOper + ' with reload_stk_last_date = ' + appCtx.reload_stk_last_date)
 }
 
 export const reloadArrStk = async (): Promise<string[][]> => {
@@ -75,3 +81,5 @@ export const getArrFromStock = (col: number): string[] => {
     logger.log('getArrFromStock by ' + col)
     return arr
 }
+
+export const usersRepo = await appDataSource.getRepository(User)

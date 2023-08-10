@@ -1,12 +1,12 @@
-import {authorize} from "../google-drive/auth"
-import {downloadFile} from "../google-drive/downloadImage"
+import {authorize} from "../../google-drive/auth"
+import {downloadFile} from "../../google-drive/downloadImage"
 import {google} from "googleapis"
 import path from "path"
-import {listFiles} from "../google-drive/listFiles"
-import {sendMessage} from "../bot/bot"
-import configMode from "../config/config"
-import logger from "../utils/logger"
-import {reloadArrImages} from "../domain/extractors";
+import {listFiles} from "../../google-drive/listFiles"
+import {sendMessage} from "../../bot/bot"
+import configMode from "../../config/config"
+import logger from "../../utils/logger"
+import {reloadArrImages} from "../extractors";
 
 export const updateImagesOnServer = async (): Promise<{ cntImg: number }> => {
     const auth = await authorize()

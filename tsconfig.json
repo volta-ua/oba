@@ -1,8 +1,13 @@
 {
   "compilerOptions": {
-    "target": "ES6",
-    "module": "CommonJS",
-    "lib": ["DOM","ES6","DOM.Iterable","ScriptHost"],
+    "target": "ESNext",
+    "module": "ES2022",
+    "lib": [
+      "DOM",
+      "es2022",
+      "DOM.Iterable",
+      "ScriptHost"
+    ],
     "skipLibCheck": true,
     "sourceMap": true,
     "outDir": "./dist",
@@ -23,6 +28,10 @@
     "resolveJsonModule": true,
     "baseUrl": "."
   },
-  "exclude": ["node_modules"],
-  "include": ["./src/**/*.ts"]
+  "exclude": [
+    "node_modules"
+  ],
+  "include": [
+    "./src/**/*.ts"
+  ]
 }
