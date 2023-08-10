@@ -1,5 +1,6 @@
 import GSheetConnector from "../GSheetConnector";
 import GSheetTableDefinition from "../GSheetTableDefinition";
+import logger from "../../utils/logger";
 
 class TblBotManager extends GSheetConnector {
     static _instance: TblBotManager;
@@ -30,10 +31,10 @@ class TblBotManager extends GSheetConnector {
 
     static async createInstance() {
         if (this._instance) {
-            console.log('TblImageScanner already existed')
+            logger.log('TblImageScanner already existed')
             return this._instance
         }
-        console.log('TblBotManager is creating')
+        logger.log('TblBotManager is creating')
         const gsConn = new TblBotManager()
         this._instance = await gsConn.create()
         return this._instance

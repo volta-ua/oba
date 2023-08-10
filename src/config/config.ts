@@ -8,12 +8,17 @@ const DEV = {
     is_dev: true,
     app: {
         port: 5000,
-        url: 'www.localhost:5000',
+        url: 'localhost:5000',
         log_level: 'debug',
     },
     bot: {
         bot_name: process.env.TELEGRAM_DEV,
-        TELEGRAM_API_TOKEN: process.env.TELEGRAM_API_TOKEN_DEV
+        TELEGRAM_API_TOKEN: process.env.TELEGRAM_API_TOKEN_DEV,
+        TELEGRAM_CHANNEL_EVENTS: process.env.TELEGRAM_CHANNEL_EVENTS_DEV,
+        TELEGRAM_CHANNEL_HEALTH: process.env.TELEGRAM_CHANNEL_HEALTH_DEV,
+    },
+    execution: {
+        skip_validation: true
     },
     toStringCustom,
 }
@@ -28,7 +33,12 @@ const PROD = {
     },
     bot: {
         bot_name: process.env.TELEGRAM_PROD,
-        TELEGRAM_API_TOKEN: process.env.TELEGRAM_API_TOKEN_PROD
+        TELEGRAM_API_TOKEN: process.env.TELEGRAM_API_TOKEN_PROD,
+        TELEGRAM_CHANNEL_EVENTS: process.env.TELEGRAM_CHANNEL_EVENTS_PROD,
+        TELEGRAM_CHANNEL_HEALTH: process.env.TELEGRAM_CHANNEL_HEALTH_PROD,
+    },
+    execution: {
+        skip_validation: false
     },
     toStringCustom,
 }
@@ -36,8 +46,8 @@ const PROD = {
 const configMode = env === PROD.mode ? PROD : DEV
 
 function toStringCustom() {
-    const { mode, is_dev, app } = configMode
-    return JSON.stringify({ mode, is_dev, app })
+    const {mode, is_dev, app, execution} = configMode
+    return JSON.stringify({mode, is_dev, app, execution})
 }
 
 export default configMode

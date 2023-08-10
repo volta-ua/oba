@@ -1,42 +1,44 @@
-import {google, drive_v3, Auth} from "googleapis" //Common
+import {authorize} from "../google-drive/auth"
+import {downloadFile} from "../google-drive/downloadImage"
+import {google} from "googleapis"
+import path from "path"
+import {listFiles} from "../google-drive/listFiles"
+import {sendMessage} from "../bot/bot"
+import configMode from "../config/config"
+import logger from "../utils/logger"
+import {reloadArrImages} from "../domain/extractors";
 
-const updateImagesOnServer = async () => {
-    const auth: Auth.GoogleAuth = new google.auth.GoogleAuth()
-    //const auth = await authorize()
-    const drive: drive_v3.Drive = google.drive({
-        version: 'v3',
-        auth,
-    })
-    //const drive = google.drive({version: 'v3', auth: auth})
-    const listParams: drive_v3.Params$Resource$Files$List = {}
-    const res = await drive.files.list(listParams)
-    const listResults: drive_v3.Schema$FileList = res.data
-
-    console.log(listResults)
-    /*
-        const files: any[] = []
-        try {
-            const res = await drive.files.list({
-                q: 'mimeType=\'image/jpeg\'',
-                fields: 'nextPageToken, files(id, name)',
-                spaces: 'drive',
-            });
-            Array.prototype.push.apply(files, res.files);
-            res.data.files.forEach(function (file) {
-                logger.log('Found file:', file.name, file.id);
-            });
-        } catch (err) {
-            logger.error(err)
-            throw err
-        }
-
-
-        //const folders = scanSubfolders(GD_FOLDER_IMAGES)
-
+export const updateImagesOnServer = async (): Promise<{ cntImg: number }> => {
+    const auth = await authorize()
+    const arr = await listFiles(auth)
+    let imgFolders = undefined
+    if (arr && arr.length > 0) {
+        imgFolders = arr.filter(
+            f => f.name.match('^[0-9]{5}$')
+        )
     }
+    let cntImg = 0
+    if (imgFolders && imgFolders.length > 0) {
+        // @ts-ignore
+        const drive = google.drive({version: 'v3', auth})
+        for (const fld of imgFolders) {
+            const options = {
+                q: `'${fld.id}' in parents and trashed = false and name contains '.jpg'`,
+                fields: 'files(id, name)',
+            }
+            let res = await drive.files.list(options)
+            // @ts-ignore
+            const files = res.data.files
+            if (files && files.length > 0) {
+                // @ts-ignore
+                await downloadFile(drive, files[0].id, path.join('public', 'images', fld.name + '.jpg'))
+                logger.debug(cntImg++ + ' downloadFile ' + files[0].id)
+            }
 
-    const scanSubfolders = (folder) => {
-    */
+        }
+    }
+    reloadArrImages()
+    await sendMessage(configMode.bot.TELEGRAM_CHANNEL_EVENTS ?? '',
+        'images updated on server: ' + cntImg)
+    return {cntImg}
 }
-
-updateImagesOnServer().then(() => console.log('updateImagesOnServer done'))

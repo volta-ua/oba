@@ -1,11 +1,9 @@
-/*
-import {google} from "googleapis";
 import fs from 'fs'
+import logger from "../utils/logger";
 
-export async function downloadFile(auth, fileId, newName) {
-    const writableStream = fs.createWriteStream(newName);
+export async function downloadFile(drive: any, fileId: string, newName: string) {
+    const writableStream = fs.createWriteStream(newName)
     try {
-        const drive = google.drive({version: 'v3', auth: auth});
         const result = await drive.files.get({
                 fileId: fileId,
                 alt: 'media'
@@ -16,9 +14,8 @@ export async function downloadFile(auth, fileId, newName) {
             result.data.pipe(writableStream)
         }
     } catch (err) {
-        console.error(err)
+        logger.error(err)
         throw err;
     }
-    console.log('downloadFile ' + newName)
+    logger.info('downloadFile ' + newName)
 }
-*/

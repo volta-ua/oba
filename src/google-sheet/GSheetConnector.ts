@@ -1,5 +1,6 @@
 import {GoogleSpreadsheet} from 'google-spreadsheet'
 import GSheetTableDefinition from "./GSheetTableDefinition";
+import logger from "../utils/logger";
 
 export default class GSheetConnector {
     _ws: any;
@@ -36,19 +37,20 @@ export default class GSheetConnector {
                     )
             )
         }
-        //console.log('created: ' + this._toString())
-        console.log('created: ' + JSON.stringify(this._tableDef))
+        logger.log('created: ' + JSON.stringify(this._tableDef))
         return this
     }
 
     async reloadInfo() {
         await this._doc.loadInfo()
-        console.log('reloadInfo: ' + this._tableDef.id)
+        logger.log('reloadInfo: ' + this._tableDef.id)
     }
 
-    async getDataRangeBySheet(shName: string, addr: string) {
+    async getDataRangeBySheet(shName: string, addr: string, indKeyEmptyRevove?: number) {
         const sh = this._ws[shName]
-        return await sh.getCellsInRange(addr)
+        let data = await sh.getCellsInRange(addr)
+        if (indKeyEmptyRevove) data = data.filter((el: string[]) => el[indKeyEmptyRevove] !== '')
+        return data
     }
 
     /*_toString() {
@@ -93,7 +95,7 @@ export default class GSheetConnector {
         if (isForce || dtNow.getTime() - this._usedAt.getTime() > this._useCacheDuringMs) {
             await this.reloadInfo();
             this._usedAt = dtNow;
-            console.log('extractDataFromTableOrCache done')
+            logger.log('extractDataFromTableOrCache done')
         }
     }*/
 }

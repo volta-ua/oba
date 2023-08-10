@@ -1,6 +1,7 @@
 import GSheetConnector from "../GSheetConnector"
 import GSheetTableDefinition from "../GSheetTableDefinition"
 import {SH_DICT, SH_STK} from "../../config/constants"
+import logger from "../../utils/logger";
 
 class TblBooking extends GSheetConnector {
     static _instance: TblBooking;
@@ -45,10 +46,10 @@ class TblBooking extends GSheetConnector {
 
     static async createInstance() {
         if (this._instance) {
-            console.log('TblBooking already existed')
+            logger.log('TblBooking already existed')
             return this._instance
         }
-        console.log('TblBooking is creating')
+        logger.log('TblBooking is creating')
         const gsConn = new TblBooking()
         this._instance = await gsConn.create()
         return this._instance

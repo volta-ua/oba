@@ -3,7 +3,7 @@ import {
     NP_METHOD_DOOR, MSG_CLEAR, MSG_SEND, MSG_ADD_POSITION, MSG_AVAIL, MSG_AUTH
 } from '../config/constants'
 
-export function composeInitButtons() {
+export const composeInitButtons = () => {
     return {
         'parse_mode': 'Markdown',
         'reply_markup': {
@@ -15,7 +15,7 @@ export function composeInitButtons() {
     }
 }
 
-export function composeAuthButtons() {
+export const composeAuthButtons = () => {
     return {
         'parse_mode': 'Markdown',
         'reply_markup': {
@@ -31,7 +31,7 @@ export function composeAuthButtons() {
     }
 }
 
-export function composeTypeButtons() {
+export const composeTypeButtons = () => {
     return {
         'parse_mode': 'Markdown',
         'reply_markup': {
@@ -45,7 +45,7 @@ export function composeTypeButtons() {
     }
 }
 
-export function composeButtonsMethodNP() {
+export const composeButtonsMethodNP = () => {
     return {
         'parse_mode': 'Markdown',
         'reply_markup': {
@@ -59,7 +59,7 @@ export function composeButtonsMethodNP() {
     }
 }
 
-export function composeSizeButtons() {
+export const composeSizeButtons = () => {
     let buttons = [
         [{text: '35'}, {text: '36'}, {text: '37'}, {text: '38'}],
         [{text: '39'}, {text: '40'}, {text: '41'}, {text: '-'}],
@@ -74,7 +74,7 @@ export function composeSizeButtons() {
     }
 }
 
-export function composeQtyButtons(qtyMax: number) {
+export const composeQtyButtons = (qtyMax: number) => {
     return {
         'parse_mode': 'Markdown',
         'reply_markup': {
@@ -86,7 +86,7 @@ export function composeQtyButtons(qtyMax: number) {
     }
 }
 
-export function composeButtonsFromArray(arr: string[]) {
+export const composeButtonsFromArray = (arr: string[]) => {
     return {
         'parse_mode': 'Markdown',
         'reply_markup': {
@@ -98,7 +98,7 @@ export function composeButtonsFromArray(arr: string[]) {
     }
 }
 
-export function composOrderConfirmButtons(isNext: boolean = false) {
+export const composOrderConfirmButtons = (isNext: boolean = false) => {
     let buttons = isNext ? [[{text: MSG_ADD_POSITION}]] : []
     buttons.push([{text: MSG_SEND}])
     buttons.push([{text: MSG_CLEAR}])
