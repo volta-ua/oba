@@ -14,6 +14,7 @@ import TblBooking from "../google-sheet/models/TblBooking"
 import {appCtx} from "./ApplicationContext";
 import {appDataSource} from "../db/appDataSource";
 import {User} from "../entity/User";
+import {Repository} from "typeorm";
 
 let wsBooking: TblBooking
 export let arrStk: any[][]
@@ -82,4 +83,4 @@ export const getArrFromStock = (col: number): string[] => {
     return arr
 }
 
-export const usersRepo = await appDataSource.getRepository(User)
+export const usersRepo: Repository<User> = await appDataSource.getRepository(User)

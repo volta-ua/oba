@@ -1,15 +1,18 @@
 import {
     DELIV_TYPE_NP, DELIV_TYPE_NP_POD, DELIV_TYPE_UP, NP_METHOD_WH, NP_METHOD_POST,
-    NP_METHOD_DOOR, MSG_CLEAR, MSG_SEND, MSG_ADD_POSITION, MSG_AVAIL, MSG_AUTH
+    NP_METHOD_DOOR, MSG_CLEAR, MSG_SEND, MSG_ADD_POSITION, MSG_AVAIL, MSG_AUTH, MSG_BALANCE
 } from '../config/constants'
 
-export const composeInitButtons = () => {
+export const composeInitButtons = (isPartner: boolean) => {
     return {
         'parse_mode': 'Markdown',
         'reply_markup': {
             'one_time_keyboard': true,
             'keyboard': [
-                [MSG_AVAIL]
+                [MSG_AVAIL],
+                isPartner
+                    ? [MSG_BALANCE]
+                    : [MSG_AUTH],
             ]
         }
     }

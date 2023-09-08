@@ -1,5 +1,5 @@
+import express from 'express'
 import {
-    CODE_UA,
     COL_STK_ARTICUL,
     COL_STK_COLOUR,
     COL_STK_MODEL,
@@ -7,54 +7,46 @@ import {
     COL_STK_PRICE_MANY,
     COL_STK_PRICE_ONE,
     COL_STK_SEASON,
-    COL_STK_SIZE_L, DELIV_TYPE_NP, DELIV_TYPE_NP_POD, DELIV_TYPE_UP,
-    IND_USER_CONF_MSG_AVAIL, MAX_POSITION_IN_ORDER, MAX_QTY_IN_POSITION, MSG_ADD_POSITION,
+    COL_STK_SIZE_L,
+    IND_USER_CONF_MSG_AVAIL,
     MSG_AVAIL,
     MSG_CLEAR,
-    MSG_NEW_ORDER, MSG_SEND, NP_METHOD_DOOR,
+    MSG_NEW_ORDER,
     SIZES
-} from "../config/constants";
-import {states} from "./states";
-import logger from "../utils/logger";
-import {sendMessage} from "../bot/bot";
-import {MSG_ABOUT, MSG_HELP, msgCancelOrder, msgGoToHome} from "./textForStages";
+} from '../config/constants'
+import {states} from './states'
+import logger from '../utils/logger'
+import {sendMessage} from '../bot/bot'
+import {MSG_ABOUT, MSG_HELP, msgCancelOrder, msgGoToHome} from './textForStages'
 import {
-    isClientNameValid,
-    isClientPhoneValid, isItemValid,
-    isLegalInputForRegExp, isNpWhValid, isQtyValid, isSizeValid, isUpIndexValid,
-    isValidNPmethod,
+    isLegalInputForRegExp,
     isValidPhonePartner
-} from "../validation/validation";
-import {filterArray, indexOfIgnoringCase, makeFirstLetterCapital} from "../utils/service";
-import configMode from "../config/config";
-import {TELEGRAM_SUPPORT} from "./common";
-import Order from "../model/Order";
-import Item from "../model/Item";
-import {users} from "../model/Users";
-import express from "express";
+} from '../validation/validation'
+import {filterArray, indexOfIgnoringCase} from '../utils/service'
+import configMode from '../config/config'
+import {TELEGRAM_SUPPORT} from './common'
 import {
     arrStk,
     extractDataFromTableOrCache,
     getArrFromStock,
     images,
-    reloadArrCities,
     userConf,
     usersRepo
-} from "./extractors";
+} from './extractors'
 import {
-    composeAuthButtons,
-    composeButtonsFromArray, composeButtonsMethodNP,
+    composeButtonsFromArray,
     composeInitButtons,
-    composeQtyButtons, composeSizeButtons, composeTypeButtons,
-    composOrderConfirmButtons
-} from "./composeButtons"
+} from './composeButtons'
+import UserDto from '../entity/dto/UserDto'
 
+// @ts-ignore// TODO REMOVE
 export const messageHandler = async (req: express.Request, res: express.Response): Promise<express.Response | undefined> => {
     const message = req.body?.message ?? req.body?.edited_message
     const phonePartner = message?.contact?.phone_number?.trim()
     const photo = message?.photo ? message.photo[0] : null
     const chatId: string = message?.chat?.id ?? ''
-    const user = users.getExistedOrAddNewUser(chatId)
+    const user = await usersRepo.findOneBy({chat_id: chatId})
+        ?? usersRepo.create(new UserDto(chatId))
     const messageText = message?.text?.trim()
     logger.info(JSON.stringify(req.body))
     if ((!messageText && !phonePartner && !photo) || !chatId) {
@@ -79,24 +71,25 @@ export const messageHandler = async (req: express.Request, res: express.Response
             user.state = states.NEW
             break
         default:
-            if (!user?.state) {
+            if (!user.state) {
                 user.state = states.HOME
             }
     }
 
-    logger.log(user.state, messageText)
+    logger.info(user.state, messageText)
 
     switch (user.state) {
         case states.HOME:
             user.state = states.HOME
-            const user = usersRepo.findOneBy({chat_id: chatId})
-            const isUserKnown = !!user
-            let msgHome = '☀Рады приветствовать Вас в Telegram-боте компании производителя стильной женской обуви.\n' +
+            let isPartner = !!user.phone
+            let title = isPartner ? 'Партнер' : 'пользователь'
+            let msgHome = '☀Уважаемый ' + title + '!\n' +
+                'Рады приветствовать Вас в Telegram-боте компании производителя стильной женской обуви.\n' +
                 '❓Справочная информация: ' + states.HELP + '\n' +
                 '💁Поддержка: ' + TELEGRAM_SUPPORT + '\n' +
                 'ℹПро компанию: ' + states.ABOUT +
                 msgGoToHome
-            await sendMessage(chatId, msgHome, composeInitButtons())
+            await sendMessage(chatId, msgHome, composeInitButtons(isPartner))
             break
 
         case states.HELP :
@@ -189,7 +182,7 @@ export const messageHandler = async (req: express.Request, res: express.Response
 
         case states.NEW:
             user.state = states.PHONE_PARTNER
-            user.order = new Order()
+            /*user.order = new Order()
             await sendMessage(chatId, 'Для создания заказа необходимо распологать информацией:\n' +
                 ' - имя клиента и номер телефона;\n' +
                 ' - скрин оплаты;\n' +
@@ -199,7 +192,7 @@ export const messageHandler = async (req: express.Request, res: express.Response
                 ' - индекс при доставке Укрпоштой;\n' +
                 ' - артикул, размер, количество (до ' + MAX_POSITION_IN_ORDER + ' пар.)\n\n' +
                 'Предоставьте свой номер телефона для идентификации',
-                composeAuthButtons())
+                composeAuthButtons())*/
             break
 
         case states.PHONE_PARTNER:
@@ -209,14 +202,14 @@ export const messageHandler = async (req: express.Request, res: express.Response
                     'Для уточнения, какой номер зарегистрирован можете обратится к менеджеру ' +
                     TELEGRAM_SUPPORT + msgCancelOrder)
             } else {
-                user.order = new Order()
+                /*user.order = new Order()
                 user.order.phonePartner = phonePartner.substring(1)
                 user.state = states.DELIV_TYPE
-                await sendMessage(chatId, 'Выберите тип доставки', composeTypeButtons())
+                await sendMessage(chatId, 'Выберите тип доставки', composeTypeButtons())*/
             }
             break
 
-        case states.DELIV_TYPE:
+        /*case states.DELIV_TYPE:
             switch (messageText) {
                 case DELIV_TYPE_NP:
                     user.order.delivType = DELIV_TYPE_NP
@@ -229,7 +222,7 @@ export const messageHandler = async (req: express.Request, res: express.Response
                     break
                 /*case DELIV_TYPE_OTHER:
                     user.order.delivType = null
-                    break*/
+                    break
                 default:
                     await sendMessage(chatId, 'Тип доставки должен быть одним из перечисленных' +
                         msgCancelOrder, composeTypeButtons())
@@ -239,11 +232,11 @@ export const messageHandler = async (req: express.Request, res: express.Response
             break
 
         case states.PHOTO_PAYM:
-            /*if (!await isValidPhotoPaym(photo)) {
+            if (!await isValidPhotoPaym(photo)) {
                  await sendMessage(chatId,
                      'Загрузите фотографию оплаты (нажать кнопку в виде скрепки и отправить одну фотографию)' +
                      TELEGRAM_SUPPORT + msgCancelOrder)
-             }*/
+             }
             switch (user.order.delivType) {
                 case DELIV_TYPE_NP:
                 case DELIV_TYPE_NP_POD:
@@ -257,7 +250,7 @@ export const messageHandler = async (req: express.Request, res: express.Response
                 /*case DELIV_TYPE_OTHER:
                     user.state = states.ITEM
                     await sendMessage(chatId, 'Артикул товара')
-                    break*/
+                    break
                 default:
                     await sendMessage(chatId, 'Тип доставки должен быть одним из перечисленных' +
                         msgCancelOrder, composeTypeButtons())
@@ -281,12 +274,12 @@ export const messageHandler = async (req: express.Request, res: express.Response
         case states.CLIENT_NAME:
             let nameClient = makeFirstLetterCapital(messageText)
             if (!isClientNameValid(nameClient, user.order.npMethod)) {
-                let msg = user.order.npMethod === NP_METHOD_DOOR
-                    ? 'Фамилия имя отчество клиента (3 слова через пробел).'
-                    : 'Фамилия имя клиента (2 слова через пробел).'
-                msg += ' только буквы кирилличные'
-                await sendMessage(chatId, 'Имя ' + nameClient + ' не прошло валидацию.\n' +
-                    msg + msgCancelOrder)
+            let msg = user.order.npMethod === NP_METHOD_DOOR
+                ? 'Фамилия имя отчество клиента (3 слова через пробел).'
+                : 'Фамилия имя клиента (2 слова через пробел).'
+            msg += ' только буквы кирилличные'
+            await sendMessage(chatId, 'Имя ' + nameClient + ' не прошло валидацию.\n' +
+                msg + msgCancelOrder)
             } else {
                 user.order.nameClient = nameClient
                 user.state = states.CLIENT_PHONE
@@ -445,7 +438,7 @@ export const messageHandler = async (req: express.Request, res: express.Response
                 case MSG_SEND:
                     user.state = states.CREATED
                     let dt = new Date()
-                    user.order.createdAt = dt
+                    user.createdAt = dt
                     let orderId = '777'//generateOrderId(user, dt)
                     user.order.orderId = orderId
                     user.orders.push(user.order)
@@ -462,7 +455,7 @@ export const messageHandler = async (req: express.Request, res: express.Response
                     await sendMessage(chatId, 'Заказ сброшен' + msgGoToHome)
                     break
                 default:
-                    if (user.order.bucket.length === MAX_POSITION_IN_ORDER) {
+                    if (Math.random() > 0.5) {//TODO SKIPPED user.order.bucket.length === MAX_POSITION_IN_ORDER) {
                         await sendMessage(chatId, 'Достигнут порог позиций в одном заказе. Отправить заказ?' +
                             msgCancelOrder, composOrderConfirmButtons())
                     } else {
@@ -477,6 +470,6 @@ export const messageHandler = async (req: express.Request, res: express.Response
             await sendMessage(chatId, 'Ответ не определен' +
                 msgGoToHome + '.\nСправочная ифнормация находится по ' + states.HELP +
                 '.\nПо определенным вопросам можете обратится к менеджеру ' + TELEGRAM_SUPPORT)
-    }
+    */}
     return undefined
 }
