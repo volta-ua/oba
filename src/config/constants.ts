@@ -15,7 +15,7 @@ export const NP_METHOD_DOOR = 'ДВЕРИ'
 
 export const SH_DICT = 'DICT'
 export const ADDR_DICT_CITIES = 'P2:P'
-export const ADDR_DICT_USER_CONF = 'B15:B15'
+export const ADDR_DICT_USER_CONF = 'B18:B18'
 export const IND_USER_CONF_MSG_AVAIL = 0
 
 export const SH_STK = 'STOCK'
